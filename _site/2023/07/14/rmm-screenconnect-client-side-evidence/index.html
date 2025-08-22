@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Rmm Screenconnect Client Side Evidence | DFIR TNT Digital Forensics Incident Response Tips and Tricks</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Rmm Screenconnect Client Side Evidence" />
+<meta name="author" content="Andrew Skatoff" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="layout: post title: ‘RMM - ScreenConnect: Client-Side Evidence’ date: 2023-07-14 19:29:59.000000000 -04:00 categories: Forensics Log Analysis RMM tags: LOL_M&amp;Ms &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; Inspired by recent threat intelligence, I am starting a series on Remote Monitoring and Management (RMM) tools. I wanted start with some testing on ScreenConnect to support investigators who may have a victim device where a user has been tricked into giving control over to an attacker. We want to be able to answer questions like these: &lt;/p&gt; What can we find out about what happened? Was malware introduced? Was sensitive data lost? &lt;/ul&gt; Here is some obligatory background nonsense from JetPack AI: ScreenConnect is a comprehensive remote access tool developed by ConnectWise. With its robust capabilities, ScreenConnect empowers users to securely and conveniently access and control remote computers, servers, and devices from anywhere in the world. Designed with simplicity and efficiency in mind, ScreenConnect facilitates seamless collaboration, troubleshooting, and support for IT professionals and businesses alike. Whether you need to assist a colleague, provide remote technical support, or access your work computer while on the go, ScreenConnect offers a reliable solution that ensures a seamless and secure remote access experience. Testing Details Testing was done with ScreenConnect agent version 23.4.5.8571 with the &quot;victim&quot; device being Windows10 v1709 (OS Build 16299.309). Telemetry used was &lt;/p&gt; Sysmon (with the Swift-on-Security config), PowerShell script block logging and transcripts were enabled. Noriben was used to automate Procmon output. Memory strings analysis performed with ProcessHacker. &lt;/ul&gt; Installation After signing up for a 14-day free trial and setting up my account, they gave me a custom URL to sign into a web UI where I could manage my fleet of &quot;victim&quot; devices. I was able to create my own subdomain like so: &quot;amskatoff.screenconnect.com&quot;. Web UI console to manage my fleet After clicking on the &quot;Build+&quot; button (located at the top left corner), I was prompted to build an installer and given several options for the target operating system. This was followed by options to download the executable file or share a link to it. The provided link was: https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest Once executed, the installer launched msiexec.exe and installed a service called &quot;ScreenConnect Client (429d9ba6e9123fb4)&quot; which pointed to C:\Program Files (x86)\ScreenConnect Client (429d9ba6e9123fb4)\ScreenConnect.ClientService.exe. This file then spawned two instances of a child process called ScreenConnect.WindowsClient.exe one with my default credentials and another one running as System. The service running as SYSTEM was also recorded in a 4573 event in the Security Log, indicating sensitive privilege use (SeTcbPrivilege). The remote control session was immediately available through the host web interface. There was no prompt to give full control. A telling application log event occurred at this time, showing that I was now connected to the victim&#39;s device. A similar event was logged when the remote connection was severed. An apparently randomly generated C2 domain (instance-bw7a3j-relay.screenconnect.com) was contacted over port 443 as part of this channel. Similar domain name patterns have been observed in threat intelligence reports. Chatting I was unable to find any logs of chat messages. However, my chat strings were found in memory. File Transfers Running an arbitrary exe on the client was trivial via the web UI. I was given the option to run elevated. At this time, a folder was created and my exe file was placed into it: C:\Users\REM\Documents\ConnectWiseControl\Temp\evil.exe. The file executed about a minute later. I killed the process, and the file disappeared from the folder shortly thereafter. Shortly after that, the &quot;Temp&quot; folder also vanished. Sending a file to the client was performed via the host software. This activity created a new folder: C:\Users\REM\Documents\ConnectWiseControl\Files containing my file. Additionally, the event was recorded in the Application log of the client device. When pulling a file/folder from my victim machine, no event log entries were observed, but changes were observed in the config file found at C:\Users\REM\AppData\Local\ScreenConnect Client (429d9ba6e9123fb4)\user.config. This file appears to change quite a lot during active sessions. During my test to pull an entire folder, the current (at the time) version of the file showed the following; telling us which folder was exfiltrated. It is unfortunate that the file is so volatile since it holds important evidence that I couldn&#39;t find elsewhere. Timestamp correlation with shellbags or carving the user.config files from disk and/or memory could be good next steps to find out which files/folders were taken. Remote Administration Numerous administration tasks are available to the host in the web console, such as: &lt;/p&gt; list/kill tasks list/manage services list/manage &quot;updates&quot; Review a selection of event logs. &lt;/ul&gt; My testing showed that each of these is accomplished through randomly named ps1 files which are executed with PowerShell as a child process of ScreenConnect.ClientService.exe as follows: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\WINDOWS\TEMP\ScreenConnect\23.4.5.8571\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1 With script block logging and PowerShell transcripts, we can see what information is being leaked to the host and what other actions were taken. The ps1 launched by the &quot;Updates&quot; query left the following 4104 event in the powershell (Operational) log. A review of any other 4104 events where the path includes &quot;ScreenConnect&quot; would answer additional remaining questions about these sorts of remote admin diagnostic tasks. It&#39;s nice to know what kinds of data we may have lost to the attacker, but in the case of vulnerabilities, we might want to know the exact data that was spilled. EventID 4103 and/or our PowerShell transcripts will tell us that story. Here&#39;s a sample of the transcript file for the &quot;Updates&quot; query which shows that the host is now aware I haven&#39;t patched this client machine since 2018! Additional samples can be found here: psh_trasnscript_samples A Summary of Indicators / TTPs TTP / IOCs Analytic Screenconnect service installed with a part of the name being randomly generated: &quot;ScreenConnect Client (429d9ba6e9123fb4)&quot; source=system.evtx EventCode=7045Message = &quot;*ScreenConnect Cient (*)&quot; The service running as SYSTEM was also recorded in a 4573 event in the Security Log indicating Sensitive Privilege Use (SeTcbPrivilege) source=system.evtx EventCode=4573Message = &quot;*ScreenConnect*&quot; AND Message = &quot;*SeTcbPrivilege*&quot; https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest Review EDR/Sysmon commandlines, DNS events, and/or, Proxy Logs for URLs with pattern like:http*.screenconnect.com/Bin/ScreenConnect*.exe* ScreenConnect.ClientService.exe Filename indicator for use in reviewing process execution events. ScreenConnect.WindowsClient.exe Filename indicator for use in reviewing process execution events. Cloud Account Administrator Connected source=Application.evtxEventCode=100Source=ScreenConnectMessage=&quot;*Cloud Account Administrator Connected*&quot; Cloud Account Administrator Disconnected source=Application.evtxEventCode=101Source=ScreenConnectMessage=&quot;Cloud Account Administrator Disconnected&quot; C:\Users\REM\Documents\ConnectWiseControl\Temp Execution of any PE from this directory indicates it was likely provided by the ScreenConnect host. C:\Users\REM\Documents\ConnectWiseControl\Files source=Application.evtxEventCode=201Source=ScreenConnectMessage=&quot;*transfer*&quot; powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\WINDOWS\TEMP\ScreenConnect\23.4.5.8571\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1 Source=Microsoft-Windows-Powershell-OperationalEventID 4103Message=*screenConnect*.ps1* Huntables Additional Resources Although this research was independent, after I started it, I noticed several other excellent resources online with similar information. If you want to delve deeper, check them out: &lt;/p&gt; https://www.huntandhackett.com/blog/revil-the-usage-of-legitimate-remote-admin-tooling &lt;/ul&gt; &lt;/p&gt; https://digitalforensicsdotblog.wordpress.com/tag/screenconnect/ &lt;/ul&gt; &lt;/body&gt;&lt;/html&gt;" />
+<meta property="og:description" content="layout: post title: ‘RMM - ScreenConnect: Client-Side Evidence’ date: 2023-07-14 19:29:59.000000000 -04:00 categories: Forensics Log Analysis RMM tags: LOL_M&amp;Ms &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; Inspired by recent threat intelligence, I am starting a series on Remote Monitoring and Management (RMM) tools. I wanted start with some testing on ScreenConnect to support investigators who may have a victim device where a user has been tricked into giving control over to an attacker. We want to be able to answer questions like these: &lt;/p&gt; What can we find out about what happened? Was malware introduced? Was sensitive data lost? &lt;/ul&gt; Here is some obligatory background nonsense from JetPack AI: ScreenConnect is a comprehensive remote access tool developed by ConnectWise. With its robust capabilities, ScreenConnect empowers users to securely and conveniently access and control remote computers, servers, and devices from anywhere in the world. Designed with simplicity and efficiency in mind, ScreenConnect facilitates seamless collaboration, troubleshooting, and support for IT professionals and businesses alike. Whether you need to assist a colleague, provide remote technical support, or access your work computer while on the go, ScreenConnect offers a reliable solution that ensures a seamless and secure remote access experience. Testing Details Testing was done with ScreenConnect agent version 23.4.5.8571 with the &quot;victim&quot; device being Windows10 v1709 (OS Build 16299.309). Telemetry used was &lt;/p&gt; Sysmon (with the Swift-on-Security config), PowerShell script block logging and transcripts were enabled. Noriben was used to automate Procmon output. Memory strings analysis performed with ProcessHacker. &lt;/ul&gt; Installation After signing up for a 14-day free trial and setting up my account, they gave me a custom URL to sign into a web UI where I could manage my fleet of &quot;victim&quot; devices. I was able to create my own subdomain like so: &quot;amskatoff.screenconnect.com&quot;. Web UI console to manage my fleet After clicking on the &quot;Build+&quot; button (located at the top left corner), I was prompted to build an installer and given several options for the target operating system. This was followed by options to download the executable file or share a link to it. The provided link was: https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest Once executed, the installer launched msiexec.exe and installed a service called &quot;ScreenConnect Client (429d9ba6e9123fb4)&quot; which pointed to C:\Program Files (x86)\ScreenConnect Client (429d9ba6e9123fb4)\ScreenConnect.ClientService.exe. This file then spawned two instances of a child process called ScreenConnect.WindowsClient.exe one with my default credentials and another one running as System. The service running as SYSTEM was also recorded in a 4573 event in the Security Log, indicating sensitive privilege use (SeTcbPrivilege). The remote control session was immediately available through the host web interface. There was no prompt to give full control. A telling application log event occurred at this time, showing that I was now connected to the victim&#39;s device. A similar event was logged when the remote connection was severed. An apparently randomly generated C2 domain (instance-bw7a3j-relay.screenconnect.com) was contacted over port 443 as part of this channel. Similar domain name patterns have been observed in threat intelligence reports. Chatting I was unable to find any logs of chat messages. However, my chat strings were found in memory. File Transfers Running an arbitrary exe on the client was trivial via the web UI. I was given the option to run elevated. At this time, a folder was created and my exe file was placed into it: C:\Users\REM\Documents\ConnectWiseControl\Temp\evil.exe. The file executed about a minute later. I killed the process, and the file disappeared from the folder shortly thereafter. Shortly after that, the &quot;Temp&quot; folder also vanished. Sending a file to the client was performed via the host software. This activity created a new folder: C:\Users\REM\Documents\ConnectWiseControl\Files containing my file. Additionally, the event was recorded in the Application log of the client device. When pulling a file/folder from my victim machine, no event log entries were observed, but changes were observed in the config file found at C:\Users\REM\AppData\Local\ScreenConnect Client (429d9ba6e9123fb4)\user.config. This file appears to change quite a lot during active sessions. During my test to pull an entire folder, the current (at the time) version of the file showed the following; telling us which folder was exfiltrated. It is unfortunate that the file is so volatile since it holds important evidence that I couldn&#39;t find elsewhere. Timestamp correlation with shellbags or carving the user.config files from disk and/or memory could be good next steps to find out which files/folders were taken. Remote Administration Numerous administration tasks are available to the host in the web console, such as: &lt;/p&gt; list/kill tasks list/manage services list/manage &quot;updates&quot; Review a selection of event logs. &lt;/ul&gt; My testing showed that each of these is accomplished through randomly named ps1 files which are executed with PowerShell as a child process of ScreenConnect.ClientService.exe as follows: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\WINDOWS\TEMP\ScreenConnect\23.4.5.8571\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1 With script block logging and PowerShell transcripts, we can see what information is being leaked to the host and what other actions were taken. The ps1 launched by the &quot;Updates&quot; query left the following 4104 event in the powershell (Operational) log. A review of any other 4104 events where the path includes &quot;ScreenConnect&quot; would answer additional remaining questions about these sorts of remote admin diagnostic tasks. It&#39;s nice to know what kinds of data we may have lost to the attacker, but in the case of vulnerabilities, we might want to know the exact data that was spilled. EventID 4103 and/or our PowerShell transcripts will tell us that story. Here&#39;s a sample of the transcript file for the &quot;Updates&quot; query which shows that the host is now aware I haven&#39;t patched this client machine since 2018! Additional samples can be found here: psh_trasnscript_samples A Summary of Indicators / TTPs TTP / IOCs Analytic Screenconnect service installed with a part of the name being randomly generated: &quot;ScreenConnect Client (429d9ba6e9123fb4)&quot; source=system.evtx EventCode=7045Message = &quot;*ScreenConnect Cient (*)&quot; The service running as SYSTEM was also recorded in a 4573 event in the Security Log indicating Sensitive Privilege Use (SeTcbPrivilege) source=system.evtx EventCode=4573Message = &quot;*ScreenConnect*&quot; AND Message = &quot;*SeTcbPrivilege*&quot; https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest Review EDR/Sysmon commandlines, DNS events, and/or, Proxy Logs for URLs with pattern like:http*.screenconnect.com/Bin/ScreenConnect*.exe* ScreenConnect.ClientService.exe Filename indicator for use in reviewing process execution events. ScreenConnect.WindowsClient.exe Filename indicator for use in reviewing process execution events. Cloud Account Administrator Connected source=Application.evtxEventCode=100Source=ScreenConnectMessage=&quot;*Cloud Account Administrator Connected*&quot; Cloud Account Administrator Disconnected source=Application.evtxEventCode=101Source=ScreenConnectMessage=&quot;Cloud Account Administrator Disconnected&quot; C:\Users\REM\Documents\ConnectWiseControl\Temp Execution of any PE from this directory indicates it was likely provided by the ScreenConnect host. C:\Users\REM\Documents\ConnectWiseControl\Files source=Application.evtxEventCode=201Source=ScreenConnectMessage=&quot;*transfer*&quot; powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\WINDOWS\TEMP\ScreenConnect\23.4.5.8571\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1 Source=Microsoft-Windows-Powershell-OperationalEventID 4103Message=*screenConnect*.ps1* Huntables Additional Resources Although this research was independent, after I started it, I noticed several other excellent resources online with similar information. If you want to delve deeper, check them out: &lt;/p&gt; https://www.huntandhackett.com/blog/revil-the-usage-of-legitimate-remote-admin-tooling &lt;/ul&gt; &lt;/p&gt; https://digitalforensicsdotblog.wordpress.com/tag/screenconnect/ &lt;/ul&gt; &lt;/body&gt;&lt;/html&gt;" />
+<link rel="canonical" href="https://dfirtnt.github.io/2023/07/14/rmm-screenconnect-client-side-evidence/" />
+<meta property="og:url" content="https://dfirtnt.github.io/2023/07/14/rmm-screenconnect-client-side-evidence/" />
+<meta property="og:site_name" content="DFIR TNT Digital Forensics Incident Response Tips and Tricks" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-07-14T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Rmm Screenconnect Client Side Evidence" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Andrew Skatoff"},"dateModified":"2023-07-14T00:00:00-04:00","datePublished":"2023-07-14T00:00:00-04:00","description":"layout: post title: ‘RMM - ScreenConnect: Client-Side Evidence’ date: 2023-07-14 19:29:59.000000000 -04:00 categories: Forensics Log Analysis RMM tags: LOL_M&amp;Ms &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; Inspired by recent threat intelligence, I am starting a series on Remote Monitoring and Management (RMM) tools. I wanted start with some testing on ScreenConnect to support investigators who may have a victim device where a user has been tricked into giving control over to an attacker. We want to be able to answer questions like these: &lt;/p&gt; What can we find out about what happened? Was malware introduced? Was sensitive data lost? &lt;/ul&gt; Here is some obligatory background nonsense from JetPack AI: ScreenConnect is a comprehensive remote access tool developed by ConnectWise. With its robust capabilities, ScreenConnect empowers users to securely and conveniently access and control remote computers, servers, and devices from anywhere in the world. Designed with simplicity and efficiency in mind, ScreenConnect facilitates seamless collaboration, troubleshooting, and support for IT professionals and businesses alike. Whether you need to assist a colleague, provide remote technical support, or access your work computer while on the go, ScreenConnect offers a reliable solution that ensures a seamless and secure remote access experience. Testing Details Testing was done with ScreenConnect agent version 23.4.5.8571 with the &quot;victim&quot; device being Windows10 v1709 (OS Build 16299.309). Telemetry used was &lt;/p&gt; Sysmon (with the Swift-on-Security config), PowerShell script block logging and transcripts were enabled. Noriben was used to automate Procmon output. Memory strings analysis performed with ProcessHacker. &lt;/ul&gt; Installation After signing up for a 14-day free trial and setting up my account, they gave me a custom URL to sign into a web UI where I could manage my fleet of &quot;victim&quot; devices. I was able to create my own subdomain like so: &quot;amskatoff.screenconnect.com&quot;. Web UI console to manage my fleet After clicking on the &quot;Build+&quot; button (located at the top left corner), I was prompted to build an installer and given several options for the target operating system. This was followed by options to download the executable file or share a link to it. The provided link was: https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest Once executed, the installer launched msiexec.exe and installed a service called &quot;ScreenConnect Client (429d9ba6e9123fb4)&quot; which pointed to C:\\Program Files (x86)\\ScreenConnect Client (429d9ba6e9123fb4)\\ScreenConnect.ClientService.exe. This file then spawned two instances of a child process called ScreenConnect.WindowsClient.exe one with my default credentials and another one running as System. The service running as SYSTEM was also recorded in a 4573 event in the Security Log, indicating sensitive privilege use (SeTcbPrivilege). The remote control session was immediately available through the host web interface. There was no prompt to give full control. A telling application log event occurred at this time, showing that I was now connected to the victim&#39;s device. A similar event was logged when the remote connection was severed. An apparently randomly generated C2 domain (instance-bw7a3j-relay.screenconnect.com) was contacted over port 443 as part of this channel. Similar domain name patterns have been observed in threat intelligence reports. Chatting I was unable to find any logs of chat messages. However, my chat strings were found in memory. File Transfers Running an arbitrary exe on the client was trivial via the web UI. I was given the option to run elevated. At this time, a folder was created and my exe file was placed into it: C:\\Users\\REM\\Documents\\ConnectWiseControl\\Temp\\evil.exe. The file executed about a minute later. I killed the process, and the file disappeared from the folder shortly thereafter. Shortly after that, the &quot;Temp&quot; folder also vanished. Sending a file to the client was performed via the host software. This activity created a new folder: C:\\Users\\REM\\Documents\\ConnectWiseControl\\Files containing my file. Additionally, the event was recorded in the Application log of the client device. When pulling a file/folder from my victim machine, no event log entries were observed, but changes were observed in the config file found at C:\\Users\\REM\\AppData\\Local\\ScreenConnect Client (429d9ba6e9123fb4)\\user.config. This file appears to change quite a lot during active sessions. During my test to pull an entire folder, the current (at the time) version of the file showed the following; telling us which folder was exfiltrated. It is unfortunate that the file is so volatile since it holds important evidence that I couldn&#39;t find elsewhere. Timestamp correlation with shellbags or carving the user.config files from disk and/or memory could be good next steps to find out which files/folders were taken. Remote Administration Numerous administration tasks are available to the host in the web console, such as: &lt;/p&gt; list/kill tasks list/manage services list/manage &quot;updates&quot; Review a selection of event logs. &lt;/ul&gt; My testing showed that each of these is accomplished through randomly named ps1 files which are executed with PowerShell as a child process of ScreenConnect.ClientService.exe as follows: powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\\WINDOWS\\TEMP\\ScreenConnect\\23.4.5.8571\\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1 With script block logging and PowerShell transcripts, we can see what information is being leaked to the host and what other actions were taken. The ps1 launched by the &quot;Updates&quot; query left the following 4104 event in the powershell (Operational) log. A review of any other 4104 events where the path includes &quot;ScreenConnect&quot; would answer additional remaining questions about these sorts of remote admin diagnostic tasks. It&#39;s nice to know what kinds of data we may have lost to the attacker, but in the case of vulnerabilities, we might want to know the exact data that was spilled. EventID 4103 and/or our PowerShell transcripts will tell us that story. Here&#39;s a sample of the transcript file for the &quot;Updates&quot; query which shows that the host is now aware I haven&#39;t patched this client machine since 2018! Additional samples can be found here: psh_trasnscript_samples A Summary of Indicators / TTPs TTP / IOCs Analytic Screenconnect service installed with a part of the name being randomly generated: &quot;ScreenConnect Client (429d9ba6e9123fb4)&quot; source=system.evtx EventCode=7045Message = &quot;*ScreenConnect Cient (*)&quot; The service running as SYSTEM was also recorded in a 4573 event in the Security Log indicating Sensitive Privilege Use (SeTcbPrivilege) source=system.evtx EventCode=4573Message = &quot;*ScreenConnect*&quot; AND Message = &quot;*SeTcbPrivilege*&quot; https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest Review EDR/Sysmon commandlines, DNS events, and/or, Proxy Logs for URLs with pattern like:http*.screenconnect.com/Bin/ScreenConnect*.exe* ScreenConnect.ClientService.exe Filename indicator for use in reviewing process execution events. ScreenConnect.WindowsClient.exe Filename indicator for use in reviewing process execution events. Cloud Account Administrator Connected source=Application.evtxEventCode=100Source=ScreenConnectMessage=&quot;*Cloud Account Administrator Connected*&quot; Cloud Account Administrator Disconnected source=Application.evtxEventCode=101Source=ScreenConnectMessage=&quot;Cloud Account Administrator Disconnected&quot; C:\\Users\\REM\\Documents\\ConnectWiseControl\\Temp Execution of any PE from this directory indicates it was likely provided by the ScreenConnect host. C:\\Users\\REM\\Documents\\ConnectWiseControl\\Files source=Application.evtxEventCode=201Source=ScreenConnectMessage=&quot;*transfer*&quot; powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\\WINDOWS\\TEMP\\ScreenConnect\\23.4.5.8571\\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1 Source=Microsoft-Windows-Powershell-OperationalEventID 4103Message=*screenConnect*.ps1* Huntables Additional Resources Although this research was independent, after I started it, I noticed several other excellent resources online with similar information. If you want to delve deeper, check them out: &lt;/p&gt; https://www.huntandhackett.com/blog/revil-the-usage-of-legitimate-remote-admin-tooling &lt;/ul&gt; &lt;/p&gt; https://digitalforensicsdotblog.wordpress.com/tag/screenconnect/ &lt;/ul&gt; &lt;/body&gt;&lt;/html&gt;","headline":"Rmm Screenconnect Client Side Evidence","mainEntityOfPage":{"@type":"WebPage","@id":"https://dfirtnt.github.io/2023/07/14/rmm-screenconnect-client-side-evidence/"},"url":"https://dfirtnt.github.io/2023/07/14/rmm-screenconnect-client-side-evidence/"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://dfirtnt.github.io/feed.xml" title="DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Rmm Screenconnect Client Side Evidence</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-07-14T00:00:00-04:00" itemprop="datePublished">Jul 14, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    ---
+layout: post
+title: 'RMM - ScreenConnect: Client-Side Evidence'
+date: 2023-07-14 19:29:59.000000000 -04:00
+categories:
+- Forensics
+- Log Analysis
+- RMM
+tags:
+- LOL_M&amp;Ms
+<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
+<!-- wp:paragraph --><html><body></p>
+<p>Inspired by recent <a href="https://media.defense.gov/2023/Jan/25/2003149873/-1/-1/0/JOINT_CSA_RMM.PDF">threat intelligence</a>, I am starting a series on Remote Monitoring and Management (RMM) tools. I wanted start with some testing on ScreenConnect to support investigators who may have a victim device where a user has been tricked into giving control over to an attacker. We want to be able to answer questions like these:</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:list --></p>
+<ul>
+<!-- wp:list-item --></p>
+<li>What can we find out about what happened? </li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>Was malware introduced? </li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>Was sensitive data lost?</li>
+<p><!-- /wp:list-item -->
+</ul>
+<p><!-- /wp:list --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Here is some obligatory background nonsense from JetPack AI:</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>ScreenConnect is a comprehensive remote access tool developed by ConnectWise. With its robust capabilities, ScreenConnect empowers users to securely and conveniently access and control remote computers, servers, and devices from anywhere in the world. Designed with simplicity and efficiency in mind, ScreenConnect facilitates seamless collaboration, troubleshooting, and support for IT professionals and businesses alike. Whether you need to assist a colleague, provide remote technical support, or access your work computer while on the go, ScreenConnect offers a reliable solution that ensures a seamless and secure remote access experience.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Testing Details</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Testing was done with ScreenConnect agent version 23.4.5.8571 with the "victim" device being Windows10 v1709 (OS Build 16299.309). Telemetry used was</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:list --></p>
+<ul>
+<!-- wp:list-item --></p>
+<li> Sysmon (with the Swift-on-Security config), </li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>PowerShell script block logging and transcripts were enabled. </li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>Noriben was used to automate Procmon output.</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>Memory strings analysis performed with ProcessHacker.</li>
+<p><!-- /wp:list-item -->
+</ul>
+<p><!-- /wp:list --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Installation</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>After signing up for a 14-day free trial and setting up my account, they gave me a custom URL to sign into a web UI where I could manage my fleet of "victim" devices. I was able to create my own subdomain like so: "amskatoff.screenconnect.com".</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":459,"width":724,"height":345,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image.png?w=1024" alt="" class="wp-image-459" style="width:724px;height:345px" width="724" height="345"><br />
+<figcaption class="wp-element-caption">Web UI console to manage my fleet</figcaption>
+</figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>After clicking on the "Build+" button (located at the top left corner), I was prompted to build an installer and given several options for the target operating system. This was followed by options to download the executable file or share a link to it. The provided link was:</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:code --></p>
+<pre class="wp-block-code"><code>https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest<br></code></pre>
+<p><!-- /wp:code --></p>
+<p><!-- wp:image {"id":464,"width":350,"height":397,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-2.png?w=903" alt="" class="wp-image-464" style="width:350px;height:397px" width="350" height="397"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>Once executed, the installer launched msiexec.exe and installed a service called "ScreenConnect Client (429d9ba6e9123fb4)" which pointed to C:\Program Files (x86)\ScreenConnect Client (429d9ba6e9123fb4)\ScreenConnect.ClientService.exe.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":472,"width":455,"height":516,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-6.png?w=685" alt="" class="wp-image-472" style="width:455px;height:516px" width="455" height="516"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>This file then spawned two instances of a child process called ScreenConnect.WindowsClient.exe one with my default credentials and another one running as System.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":468,"width":742,"height":54,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-3.png?w=1024" alt="" class="wp-image-468" style="width:742px;height:54px" width="742" height="54"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>The service running as SYSTEM was also recorded in a 4573 event in the Security Log, indicating sensitive privilege use (SeTcbPrivilege).</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":462,"width":790,"height":366,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-1.png?w=1024" alt="" class="wp-image-462" style="width:790px;height:366px" width="790" height="366"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>The remote control session was immediately available through the host web interface. There was no prompt to give full control. A telling application log event occurred at this time, showing that I was now connected to the victim's device.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":469,"width":590,"height":358,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-4.png?w=1024" alt="" class="wp-image-469" style="width:590px;height:358px" width="590" height="358"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>A similar event was logged when the remote connection was severed.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":498,"width":655,"height":156,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-14.png?w=1024" alt="" class="wp-image-498" style="width:655px;height:156px" width="655" height="156"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>An apparently randomly generated C2 domain (instance-bw7a3j-relay.screenconnect.com) was contacted over port 443 as part of this channel. Similar domain name patterns have been observed in threat intelligence reports.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Chatting</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>I was unable to find any logs of chat messages. However, my chat strings were found in memory.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":476,"width":583,"height":211,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-8.png?w=1024" alt="" class="wp-image-476" style="width:583px;height:211px" width="583" height="211"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>File Transfers</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Running an arbitrary exe on the client was trivial via the web UI. I was given the option to run elevated. At this time, a folder was created and my exe file was placed into it: <code>C:\Users\REM\Documents\ConnectWiseControl\Temp\evil.exe</code>. The file executed about a minute later. I killed the process, and the file disappeared from the folder shortly thereafter. Shortly after that, the "Temp" folder also vanished.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><span style="text-decoration: underline">Sending a file</span> to the client was performed via the host software. This activity created a new folder: C:\Users\REM\Documents\ConnectWiseControl\<strong>Files </strong>containing my file.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Additionally, the event was recorded in the Application log of the client device.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":500,"width":595,"height":375,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-15.png?w=1024" alt="" class="wp-image-500" style="width:595px;height:375px" width="595" height="375"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>When pulling a file/folder from my victim machine, no event log entries were observed, but changes were observed in the config file found at C:\Users\REM\AppData\Local\ScreenConnect Client (429d9ba6e9123fb4)\user.config. This file appears to change quite a lot during active sessions.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":487,"width":698,"height":108,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-12.png?w=1024" alt="" class="wp-image-487" style="width:698px;height:108px" width="698" height="108"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>During my test to pull an entire folder,  the current (at the time) version of the file showed the following; telling us which folder was exfiltrated.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":494,"width":791,"height":161,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-13.png?w=1024" alt="" class="wp-image-494" style="width:791px;height:161px" width="791" height="161"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>It is unfortunate that the file is so volatile since it holds important evidence that I couldn't find elsewhere. Timestamp correlation with shellbags or carving the user.config files from disk and/or memory could be good next steps to find out which files/folders were taken.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Remote Administration</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Numerous administration tasks are available to the host in the web console, such as:</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:list --></p>
+<ul>
+<!-- wp:list-item --></p>
+<li>list/kill tasks</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>list/manage services</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>list/manage "updates"</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>Review a selection of event logs. </li>
+<p><!-- /wp:list-item -->
+</ul>
+<p><!-- /wp:list --></p>
+<p><!-- wp:paragraph --></p>
+<p>My testing showed that  each of these is accomplished through randomly named ps1 files which are executed with PowerShell as a child process of ScreenConnect.ClientService.exe as follows: </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:code --></p>
+<pre class="wp-block-code"><code><em>powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\WINDOWS\TEMP\ScreenConnect\23.4.5.8571\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1</em></code></pre>
+<p><!-- /wp:code --></p>
+<p><!-- wp:paragraph --></p>
+<p>With script block logging and PowerShell transcripts, we can see what information is being leaked to the host and what other actions were taken.  </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>The ps1 launched by the "Updates" query left the following 4104 event in the powershell (Operational)  log. A review of any other 4104 events where the path includes "ScreenConnect" would answer additional remaining questions about these sorts of remote admin diagnostic tasks.  </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":480,"width":588,"height":241,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-9.png?w=1024" alt="" class="wp-image-480" style="width:588px;height:241px" width="588" height="241"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>It's nice to know what <strong>kinds </strong>of data we may have lost to the attacker, but in the case of vulnerabilities, we might want to know the exact data that was spilled.  EventID 4103 and/or our PowerShell transcripts will tell us that story. Here's a sample of the transcript file for the "Updates" query which shows that the host is now aware I haven't patched this client machine since 2018! Additional samples can be found here:<a href="https://github.com/dfirtnt/Testing_Artifacts#:~:text=PowerShell_transcripts.zip"> psh_trasnscript_samples</a></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":484,"width":431,"height":263,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-11.png?w=1024" alt="" class="wp-image-484" style="width:431px;height:263px" width="431" height="263"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>A Summary of Indicators / TTPs</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td>
+<strong>TTP</strong> <strong>/ IOCs</strong>
+</td>
+<td><strong>Analytic</strong></td>
+</tr>
+<tr>
+<td>Screenconnect service installed with a part of the name being randomly generated: "ScreenConnect Client (429d9ba6e9123fb4)"</td>
+<td>source=system.evtx EventCode=7045<br>Message = "*ScreenConnect Cient (*)"<br>
+</td>
+</tr>
+<tr>
+<td>The service running as SYSTEM was also recorded in a 4573 event in the Security Log indicating Sensitive Privilege Use (SeTcbPrivilege)</td>
+<td>source=system.evtx EventCode=4573<br>Message = "*<em>ScreenConnect*</em>" AND Message = "*SeTcbPrivilege*"</td>
+</tr>
+<tr>
+<td>https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest</td>
+<td>Review EDR/Sysmon commandlines, DNS events, and/or, Proxy Logs for URLs with pattern like:<br><br>http*.screenconnect.com/<br>Bin/ScreenConnect*.exe*</td>
+</tr>
+<tr>
+<td>ScreenConnect.ClientService.exe</td>
+<td>Filename indicator for use in reviewing process execution events.</td>
+</tr>
+<tr>
+<td>ScreenConnect.WindowsClient.exe </td>
+<td>Filename indicator for use in reviewing process execution events.</td>
+</tr>
+<tr>
+<td>Cloud Account Administrator Connected</td>
+<td>source=Application.evtx<br>EventCode=100<br>Source=ScreenConnect<br>Message="*Cloud Account Administrator Connected*"</td>
+</tr>
+<tr>
+<td>Cloud Account Administrator Disconnected</td>
+<td>source=Application.evtx<br>EventCode=101<br>Source=ScreenConnect<br>Message="<em>Cloud Account Administrator Disconnected</em>"</td>
+</tr>
+<tr>
+<td>C:\Users\REM\Documents\ConnectWiseControl\<strong>Temp</strong>
+</td>
+<td>Execution of any PE from this directory indicates it was likely provided by the ScreenConnect host.</td>
+</tr>
+<tr>
+<td>C:\Users\REM\Documents\ConnectWiseControl\<strong>Files</strong>
+</td>
+<td>source=Application.evtx<br>EventCode=201<br>Source=ScreenConnect<br>Message="*transfer*"</td>
+</tr>
+<tr>
+<td><em>powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\WINDOWS\TEMP\ScreenConnect\23.4.5.8571\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1</em></td>
+<td>Source=Microsoft-Windows-Powershell-Operational<br>EventID 4103<br>Message=*screenConnect*.ps1*<br>
+</td>
+</tr>
+</tbody>
+</table>
+<figcaption class="wp-element-caption">Huntables</figcaption>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Additional Resources</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Although this research was independent, after I started it, I noticed several other excellent resources online with similar information. If you want to delve deeper, check them out:</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:list --></p>
+<ul>
+<!-- wp:list-item --></p>
+<li><a href="https://www.huntandhackett.com/blog/revil-the-usage-of-legitimate-remote-admin-tooling">https://www.huntandhackett.com/blog/revil-the-usage-of-legitimate-remote-admin-tooling</a></li>
+<p><!-- /wp:list-item -->
+</ul>
+<p><!-- /wp:list --></p>
+<p><!-- wp:list --></p>
+<ul>
+<!-- wp:list-item --></p>
+<li><a href="https://digitalforensicsdotblog.wordpress.com/tag/screenconnect/">https://digitalforensicsdotblog.wordpress.com/tag/screenconnect/</a></li>
+<p><!-- /wp:list-item -->
+</ul>
+<p><!-- /wp:list --><br />
+</body></html></p>
+
+  </div><a class="u-url" href="/2023/07/14/rmm-screenconnect-client-side-evidence/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Digital Forensics | Incident Response | Tips and Tricks</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

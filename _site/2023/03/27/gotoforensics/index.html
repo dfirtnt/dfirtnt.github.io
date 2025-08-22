@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Gotoforensics | DFIR TNT Digital Forensics Incident Response Tips and Tricks</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Gotoforensics" />
+<meta name="author" content="Andrew Skatoff" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="layout: post title: GoToForensics date: 2023-03-27 19:45:05.000000000 -04:00 categories: Forensics Log Analysis tags: LOL_M&amp;Ms RMM &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; In this post we will share findings from testing GoToMeeting software when used to chat, share screens and give control of your screen to other participants. Special credits to Gabriel Quiroz for performing a substantial amount of this testing, as well as validating many of my findings. GoTo has numerous products, one of which was formerly known as LogMeIn and is now known as GoToMeeting. The scope of this testing was limited to GoToMeeting (aka G2M). The scope is further limited to the downloadable software and does not include hosting meetings via a web browser. Testing was conducted on a Windows 10 21H2 as the meeting host and using the 3.34.0.1 version of the GoToMeeting software. &lt;/p&gt; &lt;/p&gt; Action Evidence Analysis GoToMeeting Launched Command line string &quot;GoTo.exe&quot; which also include the words &quot;--type=crashpad-handler&quot;. This is evidence of the Chromium-based GoTo.exe starting to join or host a meeting. Some versions below 3.34.0.1 were not Chromium based. A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. GoToMeeting Meeting Started by Host Command line strings &quot;g2mstart.exe&quot; or &quot;GoTo.exe&quot; or &quot;g2mcomm.exe&quot; which also include the words &quot;Action&quot; AND &quot;Host&quot; A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. G2M Screen Sharing Command line strings &quot;GoToScrUtils.exe&quot; or &quot;g2mui.exe&quot;  or &quot;G2MScrUtil64.exe&quot;  which also include the string &quot;/cr&quot;. Based on our testing, this indicates GoTo is being used to share a screen.  Screen sharing via G2M may or may not be authorized in your organization. If authorized, frequent/daily screen sharing may represent an insider risk. Guest WebCam Turned On The goto.log file will indicate another participant turns on their webcam with a line similar to:[2023-02-28T21:55:57.659Z -05:00] [info]  [context] me_numberOfWebcamsReceived= 1 The number will increment as additional participants turn on their cameras. Remote Control GoTo logs most important events in the users AppData folder as follows: &quot;C:\Users\\AppData\Roaming\GoTo\Logs\goto.log&quot; OR &quot;C:\Users\\AppData\Roaming\GoTo\Logs\goto.old.log&quot;. Search for strings referencing the keyword &quot;remoteControl&quot; 3rd Party joining the session GoToMeeting indicates the number of attendees on a meeting. Use string search to search for the number of attendees joining the session. Correlate the timestamp observed in the evidence of remote control to the evidence of an increase in the number of attendees. A sample showing the increase in the number of attendees is shown below. External Participants The goto.log file can be searched for &quot;displayName&quot; to determine the identity of the meeting participants. The &quot;dialDirection&quot;:&quot;In&quot; signifies the participant is not the host. GoToMeeting Recordings Testing has shown GoToMeeting recordings will be written to User&#39;s default Documents folder as *.webm files. These can be played with windows media player. If meeting was viewed by an untrusted party, data leakage may have occurred. Review the videos to assess.The timestamp in the filename indicates the local time the recording began. The file &quot;last modified&quot; time is roughly when the recording ended. GoToMeeting Cloud Recordings 1. Alternatively, if cloud based recordings are used, the goto.log file will contain the string &quot;cloud-based recording&quot;2. Additionally, an email will be sent to the host user with subject like &quot;Your interactive recording is ready!&quot;3. Further, the email will contain a link to the recording with a URL starting with https://transcripts.gotomeeting.com. 1. Examiner should seek to view these videos for further evidence, especially relating to data loss to an untrusted meeting participant and/or GoToMeeting cloud.2. Email logs can be search for this subject.3. Proxy logs can be reviewed for visits to this domain. &lt;/div&gt; &lt;/div&gt; &lt;/body&gt;&lt;/html&gt;" />
+<meta property="og:description" content="layout: post title: GoToForensics date: 2023-03-27 19:45:05.000000000 -04:00 categories: Forensics Log Analysis tags: LOL_M&amp;Ms RMM &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; In this post we will share findings from testing GoToMeeting software when used to chat, share screens and give control of your screen to other participants. Special credits to Gabriel Quiroz for performing a substantial amount of this testing, as well as validating many of my findings. GoTo has numerous products, one of which was formerly known as LogMeIn and is now known as GoToMeeting. The scope of this testing was limited to GoToMeeting (aka G2M). The scope is further limited to the downloadable software and does not include hosting meetings via a web browser. Testing was conducted on a Windows 10 21H2 as the meeting host and using the 3.34.0.1 version of the GoToMeeting software. &lt;/p&gt; &lt;/p&gt; Action Evidence Analysis GoToMeeting Launched Command line string &quot;GoTo.exe&quot; which also include the words &quot;--type=crashpad-handler&quot;. This is evidence of the Chromium-based GoTo.exe starting to join or host a meeting. Some versions below 3.34.0.1 were not Chromium based. A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. GoToMeeting Meeting Started by Host Command line strings &quot;g2mstart.exe&quot; or &quot;GoTo.exe&quot; or &quot;g2mcomm.exe&quot; which also include the words &quot;Action&quot; AND &quot;Host&quot; A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. G2M Screen Sharing Command line strings &quot;GoToScrUtils.exe&quot; or &quot;g2mui.exe&quot;  or &quot;G2MScrUtil64.exe&quot;  which also include the string &quot;/cr&quot;. Based on our testing, this indicates GoTo is being used to share a screen.  Screen sharing via G2M may or may not be authorized in your organization. If authorized, frequent/daily screen sharing may represent an insider risk. Guest WebCam Turned On The goto.log file will indicate another participant turns on their webcam with a line similar to:[2023-02-28T21:55:57.659Z -05:00] [info]  [context] me_numberOfWebcamsReceived= 1 The number will increment as additional participants turn on their cameras. Remote Control GoTo logs most important events in the users AppData folder as follows: &quot;C:\Users\\AppData\Roaming\GoTo\Logs\goto.log&quot; OR &quot;C:\Users\\AppData\Roaming\GoTo\Logs\goto.old.log&quot;. Search for strings referencing the keyword &quot;remoteControl&quot; 3rd Party joining the session GoToMeeting indicates the number of attendees on a meeting. Use string search to search for the number of attendees joining the session. Correlate the timestamp observed in the evidence of remote control to the evidence of an increase in the number of attendees. A sample showing the increase in the number of attendees is shown below. External Participants The goto.log file can be searched for &quot;displayName&quot; to determine the identity of the meeting participants. The &quot;dialDirection&quot;:&quot;In&quot; signifies the participant is not the host. GoToMeeting Recordings Testing has shown GoToMeeting recordings will be written to User&#39;s default Documents folder as *.webm files. These can be played with windows media player. If meeting was viewed by an untrusted party, data leakage may have occurred. Review the videos to assess.The timestamp in the filename indicates the local time the recording began. The file &quot;last modified&quot; time is roughly when the recording ended. GoToMeeting Cloud Recordings 1. Alternatively, if cloud based recordings are used, the goto.log file will contain the string &quot;cloud-based recording&quot;2. Additionally, an email will be sent to the host user with subject like &quot;Your interactive recording is ready!&quot;3. Further, the email will contain a link to the recording with a URL starting with https://transcripts.gotomeeting.com. 1. Examiner should seek to view these videos for further evidence, especially relating to data loss to an untrusted meeting participant and/or GoToMeeting cloud.2. Email logs can be search for this subject.3. Proxy logs can be reviewed for visits to this domain. &lt;/div&gt; &lt;/div&gt; &lt;/body&gt;&lt;/html&gt;" />
+<link rel="canonical" href="https://dfirtnt.github.io/2023/03/27/gotoforensics/" />
+<meta property="og:url" content="https://dfirtnt.github.io/2023/03/27/gotoforensics/" />
+<meta property="og:site_name" content="DFIR TNT Digital Forensics Incident Response Tips and Tricks" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-03-27T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Gotoforensics" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Andrew Skatoff"},"dateModified":"2023-03-27T00:00:00-04:00","datePublished":"2023-03-27T00:00:00-04:00","description":"layout: post title: GoToForensics date: 2023-03-27 19:45:05.000000000 -04:00 categories: Forensics Log Analysis tags: LOL_M&amp;Ms RMM &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; In this post we will share findings from testing GoToMeeting software when used to chat, share screens and give control of your screen to other participants. Special credits to Gabriel Quiroz for performing a substantial amount of this testing, as well as validating many of my findings. GoTo has numerous products, one of which was formerly known as LogMeIn and is now known as GoToMeeting. The scope of this testing was limited to GoToMeeting (aka G2M). The scope is further limited to the downloadable software and does not include hosting meetings via a web browser. Testing was conducted on a Windows 10 21H2 as the meeting host and using the 3.34.0.1 version of the GoToMeeting software. &lt;/p&gt; &lt;/p&gt; Action Evidence Analysis GoToMeeting Launched Command line string &quot;GoTo.exe&quot; which also include the words &quot;--type=crashpad-handler&quot;. This is evidence of the Chromium-based GoTo.exe starting to join or host a meeting. Some versions below 3.34.0.1 were not Chromium based. A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. GoToMeeting Meeting Started by Host Command line strings &quot;g2mstart.exe&quot; or &quot;GoTo.exe&quot; or &quot;g2mcomm.exe&quot; which also include the words &quot;Action&quot; AND &quot;Host&quot; A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. G2M Screen Sharing Command line strings &quot;GoToScrUtils.exe&quot; or &quot;g2mui.exe&quot;  or &quot;G2MScrUtil64.exe&quot;  which also include the string &quot;/cr&quot;. Based on our testing, this indicates GoTo is being used to share a screen.  Screen sharing via G2M may or may not be authorized in your organization. If authorized, frequent/daily screen sharing may represent an insider risk. Guest WebCam Turned On The goto.log file will indicate another participant turns on their webcam with a line similar to:[2023-02-28T21:55:57.659Z -05:00] [info]  [context] me_numberOfWebcamsReceived= 1 The number will increment as additional participants turn on their cameras. Remote Control GoTo logs most important events in the users AppData folder as follows: &quot;C:\\Users\\\\AppData\\Roaming\\GoTo\\Logs\\goto.log&quot; OR &quot;C:\\Users\\\\AppData\\Roaming\\GoTo\\Logs\\goto.old.log&quot;. Search for strings referencing the keyword &quot;remoteControl&quot; 3rd Party joining the session GoToMeeting indicates the number of attendees on a meeting. Use string search to search for the number of attendees joining the session. Correlate the timestamp observed in the evidence of remote control to the evidence of an increase in the number of attendees. A sample showing the increase in the number of attendees is shown below. External Participants The goto.log file can be searched for &quot;displayName&quot; to determine the identity of the meeting participants. The &quot;dialDirection&quot;:&quot;In&quot; signifies the participant is not the host. GoToMeeting Recordings Testing has shown GoToMeeting recordings will be written to User&#39;s default Documents folder as *.webm files. These can be played with windows media player. If meeting was viewed by an untrusted party, data leakage may have occurred. Review the videos to assess.The timestamp in the filename indicates the local time the recording began. The file &quot;last modified&quot; time is roughly when the recording ended. GoToMeeting Cloud Recordings 1. Alternatively, if cloud based recordings are used, the goto.log file will contain the string &quot;cloud-based recording&quot;2. Additionally, an email will be sent to the host user with subject like &quot;Your interactive recording is ready!&quot;3. Further, the email will contain a link to the recording with a URL starting with https://transcripts.gotomeeting.com. 1. Examiner should seek to view these videos for further evidence, especially relating to data loss to an untrusted meeting participant and/or GoToMeeting cloud.2. Email logs can be search for this subject.3. Proxy logs can be reviewed for visits to this domain. &lt;/div&gt; &lt;/div&gt; &lt;/body&gt;&lt;/html&gt;","headline":"Gotoforensics","mainEntityOfPage":{"@type":"WebPage","@id":"https://dfirtnt.github.io/2023/03/27/gotoforensics/"},"url":"https://dfirtnt.github.io/2023/03/27/gotoforensics/"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://dfirtnt.github.io/feed.xml" title="DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Gotoforensics</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-03-27T00:00:00-04:00" itemprop="datePublished">Mar 27, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    ---
+layout: post
+title: GoToForensics
+date: 2023-03-27 19:45:05.000000000 -04:00
+categories:
+- Forensics
+- Log Analysis
+tags:
+- LOL_M&amp;Ms
+- RMM
+<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
+<!-- wp:paragraph --><html><body></p>
+<p>In this post we will share findings from testing GoToMeeting software when used to chat, share screens and give control of your screen to other participants. Special credits to <a rel="noreferrer noopener" href="https://twitter.com/gamaquifor" target="_blank">Gabriel Quiroz</a> for performing a substantial amount of this testing, as well as validating  many of my findings. </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>GoTo has numerous products, one of which was formerly known as LogMeIn and is now known as GoToMeeting. The scope of this testing was limited to GoToMeeting (aka G2M). The scope is further limited to the downloadable software and does not include hosting meetings via a web browser.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Testing was conducted on a Windows 10 21H2 as the meeting host and using the 3.34.0.1 version of the GoToMeeting software. </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:columns --></p>
+<div class="wp-block-columns">
+<!-- wp:column {"width":"100%"} --></p>
+<div class="wp-block-column" style="flex-basis:100%">
+<!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<thead>
+<tr>
+<th><strong>Action</strong></th>
+<th><strong>Evidence</strong></th>
+<th><strong>Analysis</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GoToMeeting Launched</td>
+<td>Command line string "GoTo.exe" which also include the words "--type=crashpad-handler". This is evidence of the Chromium-based GoTo.exe starting to join or host a meeting. Some versions below 3.34.0.1 were not Chromium based.</td>
+<td>A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. </td>
+</tr>
+<tr>
+<td>GoToMeeting Meeting Started by Host</td>
+<td>Command line strings "g2mstart.exe" or "GoTo.exe" or "g2mcomm.exe" which also include the words "Action" AND "Host"</td>
+<td>A high frequency of occurrence could be indicative of a user outsourcing their job. Additional evidence needed to verify. </td>
+</tr>
+<tr>
+<td>G2M Screen Sharing</td>
+<td>Command line strings "GoToScrUtils.exe" or "g2mui.exe"  or "G2MScrUtil64.exe"  which also include the string "/cr". Based on our testing, this indicates GoTo is being used to share a screen. </td>
+<td>Screen sharing via G2M may or may not be authorized in your organization. If authorized, frequent/daily screen sharing may represent an insider risk.</td>
+</tr>
+<tr>
+<td>Guest WebCam Turned On</td>
+<td>The goto.log file will indicate another participant turns on their webcam with a line similar to:<br><br>[2023-02-28T21:55:57.659Z -05:00] [info]  [context] me_numberOfWebcamsReceived= 1</td>
+<td>The number will increment as additional participants turn on their cameras.</td>
+</tr>
+<tr>
+<td>Remote Control</td>
+<td>GoTo logs most important events in the users AppData  folder as follows:<br><br> "C:\Users\\AppData\Roaming\GoTo\Logs\goto.log"  OR<br> "C:\Users\\AppData\Roaming\GoTo\Logs\goto.old.log". <br><br>
+</td>
+<td>Search for strings referencing the keyword "remoteControl"<br><br><a href="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mremotcontrol.jpg"><img style="width: 900px" src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mremotcontrol-1.jpg" alt=""></a>
+</td>
+</tr>
+<tr>
+<td>3rd Party joining the session</td>
+<td>GoToMeeting indicates the number of attendees on a meeting. Use string search to search for the number of attendees joining the session.</td>
+<td>Correlate the timestamp observed in the evidence of remote control to the evidence of an increase in the number of attendees. A sample showing the increase in the number of attendees is shown below.<br><br><a href="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mattendeecount.jpg"><img class="wp-image-419" style="width: 500px" src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mattendeecount.jpg" alt=""></a>
+</td>
+</tr>
+<tr>
+<td>External Participants</td>
+<td>The goto.log file can be searched for "displayName" to determine the identity of the meeting participants. <br><br>
+</td>
+<td>The "dialDirection":"In" signifies the participant is not the host. <br><br><a href="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mparticipantid.jpg"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mparticipantid.jpg" alt=""></a>
+</td>
+</tr>
+<tr>
+<td>GoToMeeting Recordings</td>
+<td>Testing has shown GoToMeeting recordings will be written to User's default Documents folder as *.webm files. <br><br><a href="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mwbemfiles.jpg"><img class="wp-image-423" style="width: 400px" src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mwbemfiles.jpg" alt=""></a>
+</td>
+<td>These can be played with windows media player. If meeting was viewed by an untrusted party, data leakage may have occurred. Review the videos to assess.<br><br>The timestamp in the filename indicates the local time the recording began. The file "last modified" time is roughly when the recording ended.</td>
+</tr>
+<tr>
+<td>GoToMeeting Cloud Recordings</td>
+<td>1. Alternatively, if cloud based recordings are used, the goto.log file will contain the string "cloud-based recording"<br><br><a href="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mcloudbasedrec.jpg"><img class="wp-image-424" style="width: 400px" src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/03/g2mcloudbasedrec.jpg" alt=""></a><br><br>2. Additionally, an email will be sent to the host user with subject like <em>"Your interactive recording is ready!"</em><br><br>3. Further, the email will contain a link to the recording with a URL starting with https://transcripts.gotomeeting.com.  </td>
+<td>1. Examiner should seek to view these videos for further evidence, especially relating to data loss to an untrusted meeting participant and/or GoToMeeting cloud.<br><br>2. Email logs can be search for this subject.<br><br>3. Proxy logs can be reviewed for visits to this domain. </td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table -->
+</div>
+<p><!-- /wp:column -->
+</div>
+<p><!-- /wp:columns --><br />
+</body></html></p>
+
+  </div><a class="u-url" href="/2023/03/27/gotoforensics/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Digital Forensics | Incident Response | Tips and Tricks</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

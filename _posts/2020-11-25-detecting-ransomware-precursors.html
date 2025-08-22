@@ -2,43 +2,10 @@
 layout: post
 title: Detecting Ransomware Precursors
 date: 2020-11-25 16:45:00.000000000 -05:00
-type: post
-parent_id: '0'
-published: true
-password: ''
-status: publish
 categories:
 - Ransomware
 tags:
 - Detection
-meta:
-  _post_tag_term_meta: ransomware
-  timeline_notification: '1606322707'
-  _edit_last: '144366846'
-  _last_editor_used_jetpack: block-editor
-  geo_public: '0'
-  _wpas_skip_21008142: '1'
-  _thumbnail_id: '274'
-  _coblocks_attr: ''
-  _coblocks_dimensions: ''
-  _coblocks_responsive_height: ''
-  _coblocks_accordion_ie_support: ''
-  amp_status: disabled
-  spay_email: ''
-  _wpas_is_tweetstorm: ''
-  _publicize_job_id: '51470422480'
-  _oembed_4a0203616b630eac97b935c390a0b276: "{{unknown}}"
-  _oembed_b7d1415e2a3e329e6205df0da9d7d598: "{{unknown}}"
-  _oembed_46932e7820b4cd16b948a488655cbd6e: "{{unknown}}"
-  _elasticsearch_data_sharing_indexed_on: '2024-11-18 13:39:52'
-author:
-  login: amskatoff897216341
-  email: amskatoff@gmail.com
-  display_name: Andrew Skatoff
-  first_name: Andrew
-  last_name: Skatoff
-permalink: "/2020/11/25/detecting-ransomware-precursors/"
----
 <p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
 <!-- wp:paragraph --><html><body></p>
 <p>The business model for Ransomware has evolved to include multi-level and multi-stage services and tool kits. Initial access is often accomplished by 1st stage compromise, followed by 2nd stage download/drop of tools like Emotet, Trickbot, and Qakbot. This 2nd stage allows adversaries to lurk in your network, profiling normal use and/or searching for targets of maximum impact. At this point the attack often looks like any other infiltration. However, several techniques are often observed just prior to ransomware execution. In this post I'll provide examples of these detectable behaviors which you can use to build SIEM alerts, custom EDR prevention/response rules, and threat hunting logic. Detecting these patterns (in near real time) will give you an advantage in understanding what kind of threat you are facing and which devices have been impacted when the inevitable emergency phone calls start coming in.</p>

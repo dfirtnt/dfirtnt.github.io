@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Rmm Xeox Client Side Evidence | DFIR TNT Digital Forensics Incident Response Tips and Tricks</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Rmm Xeox Client Side Evidence" />
+<meta name="author" content="Andrew Skatoff" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="layout: post title: ‘RMM - Xeox: Client Side Evidence’ date: 2023-08-01 18:54:22.000000000 -04:00 categories: Forensics Log Analysis tags: LOL_M&amp;Ms RMM &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; As we continue our series on Remote Monitoring and Management (RMM) tools, this time we turn our eyes to Xeox! Although I found no public reporting on this tool being used by threat actors, a colleague worked on a recent incident where this was the RMM tool of choice for the adversary (a criminal TA referred to as Scattered Kitten). With that in mind, let&#39;s look at what this tool is, what its capabilities are, and let&#39;s figure out what detection opportunities there may be and what forensic artifacts it leaves behind. Click here if you want to skip straight to the TTP/IOC section. Capabilities Their web page lists numerous remote management capabilities. It doesn&#39;t offer direct remote control capabilities, but it offers the ability to install several other remote desktop tools, and the Xeox user can use the web UI to start these tools (although, as you can see below, their capabilities are in &quot;beta&quot;). The software is published by &quot;hs2n Informationstechnologie GmbH&quot;. &quot;GmbH&quot; stands for &quot;Gesellschaft mit beschränkter Haftung,&quot; which is a German term for a &quot;company with limited liability&quot; in English. It is a legal structure used predominantly in Germany and Austria, as well as some other German-speaking countries. This particular company appears to be Austrian, as their address is in Austria and the IP addresses of their servers are also located in Austria. There is no software for the administrator and all admin tasks are performed through the web interface. Testing Details Testing was done with Xeox version 2.0.0.47 with the “victim” device being Windows10 v1709 (OS Build 16299.309). Telemetry used was &lt;/p&gt; Sysmon (with the Swift-on-Security config), PowerShell script block logging and transcripts were enabled. Noriben was used to automate Procmon output. Manual process analysis performed with ProcessHacker. &lt;/ul&gt; Client Installer After setting up a 30 day free trial, I was offered the ability to deploy agents in a few different ways. Each of which lead to the downloading and execution of an installer exe named XEOX_Agent_for_gmail_com14-2_0_0_47.exe Testing the &quot;Install with PowerShell.exe&quot; option creates a 4104 event in the powershell operational log and records the URL. I chose to download the installer manually and run through the MSI wizard. I selected all components: The &quot;Testing Internet Connection&quot; option appears to launch the following during the final minutes of the installation: xeox-agent_x64.exe is now running as a Service (with System privileges) and a version file appears in C:\Program Files (x86)\XEOX\Version.txt.  In this case, the version is 2.0.0.47. Once installed, the agent is relatively silent, at least from a user perspective. There are no popups reminding the user this is running, and there is no icon in the systray area. But as we know, RMM tools &quot;can hide, but they must run.&quot; During the install, xeox drops numerous *.pyd files (indicative of compiled python code) and several portable executables. Persistence Xeox established persistence via a Service which is setup to run automatically with System-level privileges. It also sets up a scheduled task to run every 6 hours to ensure the exe is up and running. Persistence Log Files The software does quite a bit of logging to record the actions being taken. It writes these events into log files within the C:\Program Files\XEOX\log\ folder. Little to no events appear in the Windows Application log. Network The following hostnames and IPs are contacted routinely. The agent performs a heartbeat network connection attempt every 900 seconds to ask if there are any new instructions to carry out. Reviewing a pcap from this traffic indicated there was no User-Agent string in the headers of this traffic. Dynamic Filesystem Folder The software regularly reviews current windows updates leveraging the wuinstall software (made by the same company). Ephemeral files such as *.ini and logs are created in a randomly named folder within the application directory. For example: C:\PROGRAM FILES\XEOX\WORK\22943007\WUINSTALL_1689365938.LOG. The &quot;22943007&quot; folder will later be deleted and replaced as new jobs are introduced. Additionally, the system enumerates hardware and software data via WMI. As seen on the right, the enumeration is very thorough. Following this enumeration, the results are sent back to the servers in Austria as indicated in several of the *.log files. Similar enumeration scripts are run to collect software, services, and more. This information appears back in the web UI console as follows: File/Data Exfiltration Xeox provides a &quot;Job Editor&quot; that allows numerous actions to be taken against client devices. I tested several of them. Let&#39;s start with transferring a file from the client to the server. The web UI provides a somewhat intuitive drag and drop builder. I created a test file call exfil.txt The only indication I could find of this activity was from within Xeox the *.log files. We can see in the web UI that the file has been successfully exfiltrated. Clicking on the below hotlink begins a download of the file through the browser. Arbitrary Script Execution Next I tried running a powershell script to launch calc.exe. The Script editor supports powershell and batch scripting. I noticed in the Noriben output that the xeox-agent_x64 launched a child version of itself, which then launched powershell.exe. As you can see, it has packaged the script as a randomly named *.ps1 file, the contents of which would be visible in Script Block log events and powershell transcripts. As we might expect, the *.log files are also very verbose in tracking this activity. Arbitrary LOLBAS code execution The next test was to run a command with a built-in (&quot;Living of the Land&quot;) executable. For this test I used rundll32.exe command lovingly stolen from the Red Canary&#39;s Atomic Red Team test set. The web UI job builder ran with the following parameters: This worked beautifully and created Sysmon and *.log event artifacts. We also saw in Process Hacker a process lineage story similar to the powershell test. Additional Capabilities There are many more capabilities offered in the web UI, such as: &lt;/p&gt; download a file via aria2c.exe delete shadow copies clear event logs send a windows message installing software via Chocolatey &lt;/ul&gt; Based on this initial testing, there seems to be a high likelihood that these actions would also appear in the *.log files, Sysmon (or other commandline logging events) and security logs. A Summary of Indicators / TTPs TTP / IOCs Analytic Xeox service installed source=system.evtx EventCode=7045Message = “*xeox*&quot; Xeox scheduled task source=security.evtx EventCode=4698Message = &quot;*XEOX*Agent*Watchdog*&quot; Domain IOCs login.xeox.comagent1.xeox.comws01.xeox.comws03.xeox.com IP IOCs 80.80.250.15480.80.250.153 Process Tree TTPs xeox-agent_x64.exe &gt; powershell.exexeox-agent_x64.exe &gt; cmd.exexeox-agent_x64.exe &gt; conhost.exe FileName IOCs createThirdPartySoftwareInventory.batxeox-agent_x64.exearia2c.exe (where file path includes *Xeox* &lt;/body&gt;&lt;/html&gt;" />
+<meta property="og:description" content="layout: post title: ‘RMM - Xeox: Client Side Evidence’ date: 2023-08-01 18:54:22.000000000 -04:00 categories: Forensics Log Analysis tags: LOL_M&amp;Ms RMM &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; As we continue our series on Remote Monitoring and Management (RMM) tools, this time we turn our eyes to Xeox! Although I found no public reporting on this tool being used by threat actors, a colleague worked on a recent incident where this was the RMM tool of choice for the adversary (a criminal TA referred to as Scattered Kitten). With that in mind, let&#39;s look at what this tool is, what its capabilities are, and let&#39;s figure out what detection opportunities there may be and what forensic artifacts it leaves behind. Click here if you want to skip straight to the TTP/IOC section. Capabilities Their web page lists numerous remote management capabilities. It doesn&#39;t offer direct remote control capabilities, but it offers the ability to install several other remote desktop tools, and the Xeox user can use the web UI to start these tools (although, as you can see below, their capabilities are in &quot;beta&quot;). The software is published by &quot;hs2n Informationstechnologie GmbH&quot;. &quot;GmbH&quot; stands for &quot;Gesellschaft mit beschränkter Haftung,&quot; which is a German term for a &quot;company with limited liability&quot; in English. It is a legal structure used predominantly in Germany and Austria, as well as some other German-speaking countries. This particular company appears to be Austrian, as their address is in Austria and the IP addresses of their servers are also located in Austria. There is no software for the administrator and all admin tasks are performed through the web interface. Testing Details Testing was done with Xeox version 2.0.0.47 with the “victim” device being Windows10 v1709 (OS Build 16299.309). Telemetry used was &lt;/p&gt; Sysmon (with the Swift-on-Security config), PowerShell script block logging and transcripts were enabled. Noriben was used to automate Procmon output. Manual process analysis performed with ProcessHacker. &lt;/ul&gt; Client Installer After setting up a 30 day free trial, I was offered the ability to deploy agents in a few different ways. Each of which lead to the downloading and execution of an installer exe named XEOX_Agent_for_gmail_com14-2_0_0_47.exe Testing the &quot;Install with PowerShell.exe&quot; option creates a 4104 event in the powershell operational log and records the URL. I chose to download the installer manually and run through the MSI wizard. I selected all components: The &quot;Testing Internet Connection&quot; option appears to launch the following during the final minutes of the installation: xeox-agent_x64.exe is now running as a Service (with System privileges) and a version file appears in C:\Program Files (x86)\XEOX\Version.txt.  In this case, the version is 2.0.0.47. Once installed, the agent is relatively silent, at least from a user perspective. There are no popups reminding the user this is running, and there is no icon in the systray area. But as we know, RMM tools &quot;can hide, but they must run.&quot; During the install, xeox drops numerous *.pyd files (indicative of compiled python code) and several portable executables. Persistence Xeox established persistence via a Service which is setup to run automatically with System-level privileges. It also sets up a scheduled task to run every 6 hours to ensure the exe is up and running. Persistence Log Files The software does quite a bit of logging to record the actions being taken. It writes these events into log files within the C:\Program Files\XEOX\log\ folder. Little to no events appear in the Windows Application log. Network The following hostnames and IPs are contacted routinely. The agent performs a heartbeat network connection attempt every 900 seconds to ask if there are any new instructions to carry out. Reviewing a pcap from this traffic indicated there was no User-Agent string in the headers of this traffic. Dynamic Filesystem Folder The software regularly reviews current windows updates leveraging the wuinstall software (made by the same company). Ephemeral files such as *.ini and logs are created in a randomly named folder within the application directory. For example: C:\PROGRAM FILES\XEOX\WORK\22943007\WUINSTALL_1689365938.LOG. The &quot;22943007&quot; folder will later be deleted and replaced as new jobs are introduced. Additionally, the system enumerates hardware and software data via WMI. As seen on the right, the enumeration is very thorough. Following this enumeration, the results are sent back to the servers in Austria as indicated in several of the *.log files. Similar enumeration scripts are run to collect software, services, and more. This information appears back in the web UI console as follows: File/Data Exfiltration Xeox provides a &quot;Job Editor&quot; that allows numerous actions to be taken against client devices. I tested several of them. Let&#39;s start with transferring a file from the client to the server. The web UI provides a somewhat intuitive drag and drop builder. I created a test file call exfil.txt The only indication I could find of this activity was from within Xeox the *.log files. We can see in the web UI that the file has been successfully exfiltrated. Clicking on the below hotlink begins a download of the file through the browser. Arbitrary Script Execution Next I tried running a powershell script to launch calc.exe. The Script editor supports powershell and batch scripting. I noticed in the Noriben output that the xeox-agent_x64 launched a child version of itself, which then launched powershell.exe. As you can see, it has packaged the script as a randomly named *.ps1 file, the contents of which would be visible in Script Block log events and powershell transcripts. As we might expect, the *.log files are also very verbose in tracking this activity. Arbitrary LOLBAS code execution The next test was to run a command with a built-in (&quot;Living of the Land&quot;) executable. For this test I used rundll32.exe command lovingly stolen from the Red Canary&#39;s Atomic Red Team test set. The web UI job builder ran with the following parameters: This worked beautifully and created Sysmon and *.log event artifacts. We also saw in Process Hacker a process lineage story similar to the powershell test. Additional Capabilities There are many more capabilities offered in the web UI, such as: &lt;/p&gt; download a file via aria2c.exe delete shadow copies clear event logs send a windows message installing software via Chocolatey &lt;/ul&gt; Based on this initial testing, there seems to be a high likelihood that these actions would also appear in the *.log files, Sysmon (or other commandline logging events) and security logs. A Summary of Indicators / TTPs TTP / IOCs Analytic Xeox service installed source=system.evtx EventCode=7045Message = “*xeox*&quot; Xeox scheduled task source=security.evtx EventCode=4698Message = &quot;*XEOX*Agent*Watchdog*&quot; Domain IOCs login.xeox.comagent1.xeox.comws01.xeox.comws03.xeox.com IP IOCs 80.80.250.15480.80.250.153 Process Tree TTPs xeox-agent_x64.exe &gt; powershell.exexeox-agent_x64.exe &gt; cmd.exexeox-agent_x64.exe &gt; conhost.exe FileName IOCs createThirdPartySoftwareInventory.batxeox-agent_x64.exearia2c.exe (where file path includes *Xeox* &lt;/body&gt;&lt;/html&gt;" />
+<link rel="canonical" href="https://dfirtnt.github.io/2023/08/01/rmm-xeox-client-side-evidence/" />
+<meta property="og:url" content="https://dfirtnt.github.io/2023/08/01/rmm-xeox-client-side-evidence/" />
+<meta property="og:site_name" content="DFIR TNT Digital Forensics Incident Response Tips and Tricks" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2023-08-01T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Rmm Xeox Client Side Evidence" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Andrew Skatoff"},"dateModified":"2023-08-01T00:00:00-04:00","datePublished":"2023-08-01T00:00:00-04:00","description":"layout: post title: ‘RMM - Xeox: Client Side Evidence’ date: 2023-08-01 18:54:22.000000000 -04:00 categories: Forensics Log Analysis tags: LOL_M&amp;Ms RMM &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt; &lt;/p&gt; As we continue our series on Remote Monitoring and Management (RMM) tools, this time we turn our eyes to Xeox! Although I found no public reporting on this tool being used by threat actors, a colleague worked on a recent incident where this was the RMM tool of choice for the adversary (a criminal TA referred to as Scattered Kitten). With that in mind, let&#39;s look at what this tool is, what its capabilities are, and let&#39;s figure out what detection opportunities there may be and what forensic artifacts it leaves behind. Click here if you want to skip straight to the TTP/IOC section. Capabilities Their web page lists numerous remote management capabilities. It doesn&#39;t offer direct remote control capabilities, but it offers the ability to install several other remote desktop tools, and the Xeox user can use the web UI to start these tools (although, as you can see below, their capabilities are in &quot;beta&quot;). The software is published by &quot;hs2n Informationstechnologie GmbH&quot;. &quot;GmbH&quot; stands for &quot;Gesellschaft mit beschränkter Haftung,&quot; which is a German term for a &quot;company with limited liability&quot; in English. It is a legal structure used predominantly in Germany and Austria, as well as some other German-speaking countries. This particular company appears to be Austrian, as their address is in Austria and the IP addresses of their servers are also located in Austria. There is no software for the administrator and all admin tasks are performed through the web interface. Testing Details Testing was done with Xeox version 2.0.0.47 with the “victim” device being Windows10 v1709 (OS Build 16299.309). Telemetry used was &lt;/p&gt; Sysmon (with the Swift-on-Security config), PowerShell script block logging and transcripts were enabled. Noriben was used to automate Procmon output. Manual process analysis performed with ProcessHacker. &lt;/ul&gt; Client Installer After setting up a 30 day free trial, I was offered the ability to deploy agents in a few different ways. Each of which lead to the downloading and execution of an installer exe named XEOX_Agent_for_gmail_com14-2_0_0_47.exe Testing the &quot;Install with PowerShell.exe&quot; option creates a 4104 event in the powershell operational log and records the URL. I chose to download the installer manually and run through the MSI wizard. I selected all components: The &quot;Testing Internet Connection&quot; option appears to launch the following during the final minutes of the installation: xeox-agent_x64.exe is now running as a Service (with System privileges) and a version file appears in C:\\Program Files (x86)\\XEOX\\Version.txt.  In this case, the version is 2.0.0.47. Once installed, the agent is relatively silent, at least from a user perspective. There are no popups reminding the user this is running, and there is no icon in the systray area. But as we know, RMM tools &quot;can hide, but they must run.&quot; During the install, xeox drops numerous *.pyd files (indicative of compiled python code) and several portable executables. Persistence Xeox established persistence via a Service which is setup to run automatically with System-level privileges. It also sets up a scheduled task to run every 6 hours to ensure the exe is up and running. Persistence Log Files The software does quite a bit of logging to record the actions being taken. It writes these events into log files within the C:\\Program Files\\XEOX\\log\\ folder. Little to no events appear in the Windows Application log. Network The following hostnames and IPs are contacted routinely. The agent performs a heartbeat network connection attempt every 900 seconds to ask if there are any new instructions to carry out. Reviewing a pcap from this traffic indicated there was no User-Agent string in the headers of this traffic. Dynamic Filesystem Folder The software regularly reviews current windows updates leveraging the wuinstall software (made by the same company). Ephemeral files such as *.ini and logs are created in a randomly named folder within the application directory. For example: C:\\PROGRAM FILES\\XEOX\\WORK\\22943007\\WUINSTALL_1689365938.LOG. The &quot;22943007&quot; folder will later be deleted and replaced as new jobs are introduced. Additionally, the system enumerates hardware and software data via WMI. As seen on the right, the enumeration is very thorough. Following this enumeration, the results are sent back to the servers in Austria as indicated in several of the *.log files. Similar enumeration scripts are run to collect software, services, and more. This information appears back in the web UI console as follows: File/Data Exfiltration Xeox provides a &quot;Job Editor&quot; that allows numerous actions to be taken against client devices. I tested several of them. Let&#39;s start with transferring a file from the client to the server. The web UI provides a somewhat intuitive drag and drop builder. I created a test file call exfil.txt The only indication I could find of this activity was from within Xeox the *.log files. We can see in the web UI that the file has been successfully exfiltrated. Clicking on the below hotlink begins a download of the file through the browser. Arbitrary Script Execution Next I tried running a powershell script to launch calc.exe. The Script editor supports powershell and batch scripting. I noticed in the Noriben output that the xeox-agent_x64 launched a child version of itself, which then launched powershell.exe. As you can see, it has packaged the script as a randomly named *.ps1 file, the contents of which would be visible in Script Block log events and powershell transcripts. As we might expect, the *.log files are also very verbose in tracking this activity. Arbitrary LOLBAS code execution The next test was to run a command with a built-in (&quot;Living of the Land&quot;) executable. For this test I used rundll32.exe command lovingly stolen from the Red Canary&#39;s Atomic Red Team test set. The web UI job builder ran with the following parameters: This worked beautifully and created Sysmon and *.log event artifacts. We also saw in Process Hacker a process lineage story similar to the powershell test. Additional Capabilities There are many more capabilities offered in the web UI, such as: &lt;/p&gt; download a file via aria2c.exe delete shadow copies clear event logs send a windows message installing software via Chocolatey &lt;/ul&gt; Based on this initial testing, there seems to be a high likelihood that these actions would also appear in the *.log files, Sysmon (or other commandline logging events) and security logs. A Summary of Indicators / TTPs TTP / IOCs Analytic Xeox service installed source=system.evtx EventCode=7045Message = “*xeox*&quot; Xeox scheduled task source=security.evtx EventCode=4698Message = &quot;*XEOX*Agent*Watchdog*&quot; Domain IOCs login.xeox.comagent1.xeox.comws01.xeox.comws03.xeox.com IP IOCs 80.80.250.15480.80.250.153 Process Tree TTPs xeox-agent_x64.exe &gt; powershell.exexeox-agent_x64.exe &gt; cmd.exexeox-agent_x64.exe &gt; conhost.exe FileName IOCs createThirdPartySoftwareInventory.batxeox-agent_x64.exearia2c.exe (where file path includes *Xeox* &lt;/body&gt;&lt;/html&gt;","headline":"Rmm Xeox Client Side Evidence","mainEntityOfPage":{"@type":"WebPage","@id":"https://dfirtnt.github.io/2023/08/01/rmm-xeox-client-side-evidence/"},"url":"https://dfirtnt.github.io/2023/08/01/rmm-xeox-client-side-evidence/"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://dfirtnt.github.io/feed.xml" title="DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Rmm Xeox Client Side Evidence</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2023-08-01T00:00:00-04:00" itemprop="datePublished">Aug 1, 2023
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    ---
+layout: post
+title: 'RMM - Xeox: Client Side Evidence'
+date: 2023-08-01 18:54:22.000000000 -04:00
+categories:
+- Forensics
+- Log Analysis
+tags:
+- LOL_M&amp;Ms
+- RMM
+<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
+<!-- wp:paragraph --><html><body></p>
+<p>As we continue our series on Remote Monitoring and Management (RMM) tools, this time we turn our eyes to Xeox! Although I found no public reporting on this tool being used by threat actors, a colleague worked on a recent incident where this was the RMM tool of choice for the adversary (a criminal TA referred to as Scattered Kitten). With that in mind, let's look at what this tool is, what its capabilities are, and let's figure out what detection opportunities there may be and what forensic artifacts it leaves behind. Click <a href="#ioc-ttps"><strong>here</strong></a> if you want to skip straight to the TTP/IOC section.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Capabilities</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Their web page lists numerous remote management capabilities. It doesn't offer direct remote control capabilities, but it offers the ability to install several other remote desktop tools, and the Xeox user can use the web UI to start these tools (although, as you can see below, their capabilities are in "beta").</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-16.png?w=520" alt="" width="192" height="339"></td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-29.png?w=844" alt="" width="447" height="211"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p>The software is published by "<strong>hs2n Informationstechnologie GmbH</strong>". "GmbH" stands for "Gesellschaft mit beschränkter Haftung," which is a German term for a "company with limited liability" in English. It is a legal structure used predominantly in Germany and Austria, as well as some other German-speaking countries. This particular company appears to be Austrian, as their address is in Austria and the IP addresses of their servers are also located in Austria.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>There is no software for the administrator and all admin tasks are performed through the web interface.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Testing Details</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Testing was done with Xeox version 2.0.0.47 with the “victim” device being Windows10 v1709 (OS Build 16299.309). Telemetry used was</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:list --></p>
+<ul>
+<!-- wp:list-item --></p>
+<li>Sysmon (with the Swift-on-Security config),</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>PowerShell script block logging and transcripts were enabled.</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>Noriben was used to automate Procmon output.</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>Manual process analysis performed with ProcessHacker.</li>
+<p><!-- /wp:list-item -->
+</ul>
+<p><!-- /wp:list --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Client Installer</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table {"align":"left"} --></p>
+<figure class="wp-block-table alignleft">
+<table>
+<tbody>
+<tr>
+<td>After setting up a 30 day free trial, I was offered the ability to deploy agents in a few different ways.  Each of which lead to the downloading and execution of an installer exe named XEOX_Agent_for_gmail_com14-2_0_0_47.exe</td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-17.png?w=1024" alt=""></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:image {"align":"right","id":527,"width":570,"height":69,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image alignright size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-18.png?w=1024" alt="" class="wp-image-527" style="width:570px;height:69px" width="570" height="69"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph {"align":"left"} --></p>
+<p class="has-text-align-left">Testing the "Install with PowerShell.exe" option creates a 4104 event in the powershell operational log and records the URL.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"align":"right","id":557,"width":300,"height":231,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image alignright size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image.png?w=842" alt="" class="wp-image-557" style="width:300px;height:231px" width="300" height="231"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>I chose to download the installer manually and run through the MSI wizard. I selected all components: </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>The "Testing Internet Connection" option appears to launch the following during the final minutes of the installation:</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"align":"center","id":562,"width":767,"height":225,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-2.png?w=1024" alt="" class="wp-image-562" style="width:767px;height:225px" width="767" height="225"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>xeox-agent_x64.exe is now running as a Service (with System privileges) and a version file appears in C:\Program Files (x86)\XEOX\Version.txt.   In this case, the version is 2.0.0.47.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Once installed, the agent is relatively silent, at least from a user perspective. There are no popups reminding the user this is running, and there is no icon in the systray area. But as we know, RMM tools "can hide, but they must run."</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>During the install, xeox drops numerous  *.pyd files (indicative of compiled python code) and several portable executables. </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-1.png?w=1024" alt="" width="418" height="220"></td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-5.png?w=306" alt="" width="165" height="180"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Persistence</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Xeox established persistence via a Service which is setup to run automatically with System-level privileges. It also sets up a scheduled task to run every 6 hours to ensure the exe is up and running.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-3.png?w=875" alt="" width="324" height="228"></td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-23-edited.png" alt="" width="410" height="312"></td>
+</tr>
+</tbody>
+</table>
+<figcaption class="wp-element-caption">Persistence</figcaption>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Log Files</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table {"align":"left"} --></p>
+<figure class="wp-block-table alignleft">
+<table>
+<tbody>
+<tr>
+<td>The software does quite a bit of logging to record the actions being taken. It writes these events into log files within the C:\Program Files\XEOX\log\ folder. Little to no events appear in the Windows Application log.</td>
+<td><img style="width: 800px" src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-7.png?w=324" alt=""></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Network</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td>The following hostnames and IPs are contacted routinely.</td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-25.png?w=1024" alt="" style="width: 2000px"></td>
+</tr>
+<tr>
+<td>The agent performs a heartbeat network connection attempt every 900 seconds to ask if there are any new instructions to carry out. </td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-24.png?w=1024" alt=""></td>
+</tr>
+<tr>
+<td>Reviewing a pcap from this traffic indicated there was no User-Agent string in the headers of this traffic.</td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-6.png?w=708" alt="" width="288" height="222"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Dynamic Filesystem Folder</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>The software regularly reviews current windows updates leveraging the <a href="https://wuinstall.com/">wuinstall</a> software (made by the same company).  Ephemeral files such as *.ini and logs are created in a randomly named folder within the application directory. For example: C:\PROGRAM FILES\XEOX\<mark style="background-color:rgba(0, 0, 0, 0)" class="has-inline-color has-bright-blue-color"><strong>WORK</strong></mark>\22943007\WUINSTALL_1689365938.LOG. The "22943007" folder will later be deleted and replaced as new jobs are introduced.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td>Additionally, the system enumerates hardware and software data via WMI. As seen on the right, the enumeration is very thorough.</td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-26.png?w=806" alt="" style="width: 1600px"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td>Following this enumeration, the results are sent back to the servers in Austria as indicated in several of the *.log files.</td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-27.png?w=1024" alt="" style="width: 1100px"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p>Similar enumeration scripts are run to collect software, services, and more. This information appears  back in the web UI console as follows:</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":548,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-28.png?w=1024" alt="" class="wp-image-548"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>File/Data Exfiltration</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>Xeox provides a "Job Editor" that allows numerous actions to be taken against client devices.  I tested several of them. Let's start with transferring a file from the client to the server. The web UI provides a somewhat intuitive drag and drop builder. I created a test file call exfil.txt</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-9.png?w=653" alt="" width="221" height="347"></td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-10.png?w=865" alt="" width="513" height="310"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p>The only indication I could find of this activity was from within Xeox the *.log files.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"align":"center","id":580,"width":643,"height":279,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-11.png?w=1024" alt="" class="wp-image-580" style="width:643px;height:279px" width="643" height="279"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>We can see in the web UI that the file has been successfully exfiltrated. Clicking on the below hotlink begins a download of the file through the browser.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"align":"center","id":583,"width":394,"height":193,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-12.png?w=1024" alt="" class="wp-image-583" style="width:394px;height:193px" width="394" height="193"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Arbitrary Script Execution</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td>Next I tried running a powershell script to launch calc.exe. The Script editor supports powershell and batch scripting. </td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-13.png?w=1024" alt="" style="width: 1200px"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p>I noticed in the Noriben output that the xeox-agent_x64 launched a child version of itself, which then launched powershell.exe. As you can see, it has packaged the script as a randomly named *.ps1 file, the contents of which would be visible in Script Block log events and powershell transcripts. </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":589,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-14.png?w=1024" alt="" class="wp-image-589"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>As we might expect, the *.log files are also very verbose in tracking this activity.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"align":"center","id":591,"width":328,"height":169,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-15.png?w=1024" alt="" class="wp-image-591" style="width:328px;height:169px" width="328" height="169"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Arbitrary LOLBAS code execution</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>The next test was to run a command with a built-in ("Living of the Land") executable. For this test I used <a rel="noreferrer noopener" href="https://atomicredteam.io/defense-evasion/T1218/" target="_blank">rundll32.exe command</a> lovingly stolen from the <a href="https://twitter.com/redcanary" target="_blank" rel="noreferrer noopener">Red Canary's</a> Atomic Red Team test set. The web UI job builder ran with the following parameters:<br></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":593,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-16.png?w=1024" alt="" class="wp-image-593"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>This worked beautifully and created Sysmon and *.log event artifacts.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":600,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-21.png?w=1024" alt="" class="wp-image-600"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:image {"id":599,"sizeSlug":"large","linkDestination":"none"} --></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-20.png?w=1024" alt="" class="wp-image-599"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td>We also saw in Process Hacker a process lineage story similar to the powershell test.</td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-22.png?w=383" alt=""></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Additional Capabilities</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>There are many more capabilities offered in the web UI, such as: </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:list --></p>
+<ul>
+<!-- wp:list-item --></p>
+<li>download a file via aria2c.exe</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>delete shadow copies</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>clear event logs</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>send a windows message</li>
+<p><!-- /wp:list-item --></p>
+<p><!-- wp:list-item --></p>
+<li>installing software via Chocolatey</li>
+<p><!-- /wp:list-item -->
+</ul>
+<p><!-- /wp:list --></p>
+<p><!-- wp:paragraph --></p>
+<p>Based on this initial testing, there seems to be a high likelihood  that these actions would also appear in the *.log files, Sysmon (or other commandline logging events) and security logs.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p id="ioc-ttps"><strong>A Summary of Indicators / TTPs</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:table --></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td>
+<strong>TTP</strong> <strong>/ IOCs</strong>
+</td>
+<td><strong>Analytic</strong></td>
+</tr>
+<tr>
+<td>Xeox service installed</td>
+<td>source=system.evtx EventCode=7045<br>Message = “*xeox*"</td>
+</tr>
+<tr>
+<td>Xeox scheduled task</td>
+<td>source=security.evtx  EventCode=4698<br>Message = "*XEOX*Agent*Watchdog*"</td>
+</tr>
+<tr>
+<td>Domain IOCs</td>
+<td>login.xeox.com<br>agent1.xeox.com<br>ws01.xeox.com<br>ws03.xeox.com</td>
+</tr>
+<tr>
+<td>IP IOCs</td>
+<td>80.80.250.154<br>80.80.250.153</td>
+</tr>
+<tr>
+<td>Process Tree TTPs</td>
+<td>xeox-agent_x64.exe  &gt; powershell.exe<br>xeox-agent_x64.exe  &gt; cmd.exe<br>xeox-agent_x64.exe   &gt; conhost.exe</td>
+</tr>
+<tr>
+<td>FileName IOCs</td>
+<td>createThirdPartySoftwareInventory.bat<br>xeox-agent_x64.exe<br>aria2c.exe (where file path includes *Xeox*</td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --><br />
+</body></html></p>
+
+  </div><a class="u-url" href="/2023/08/01/rmm-xeox-client-side-evidence/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Digital Forensics | Incident Response | Tips and Tricks</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>
