@@ -4,6 +4,8 @@ date: 2025-01-22
 categories: [DFIR, Welcome]
 tags: [digital forensics, incident response]
 layout: post
+image: /assets/images/cropped-linkedin_banner_image_2.png
+excerpt: "Welcome to DFIR TNT - Digital Forensics | Incident Response | Tips and Tricks! This site is currently being migrated from WordPress to GitHub Pages. More content coming soon!"
 ---
 
 Welcome to DFIR TNT - Digital Forensics | Incident Response | Tips and Tricks!
