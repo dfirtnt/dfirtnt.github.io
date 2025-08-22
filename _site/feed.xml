@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.10.0">Jekyll</generator><link href="https://dfirtnt.github.io/feed.xml" rel="self" type="application/atom+xml" /><link href="https://dfirtnt.github.io/" rel="alternate" type="text/html" /><updated>2025-08-22T12:29:28-04:00</updated><id>https://dfirtnt.github.io/feed.xml</id><title type="html">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</title><subtitle>Digital Forensics | Incident Response | Tips and Tricks</subtitle><author><name>Andrew Skatoff</name></author><entry><title type="html">Welcome to DFIR TNT</title><link href="https://dfirtnt.github.io/2025/01/22/welcome-to-dfir-tnt/" rel="alternate" type="text/html" title="Welcome to DFIR TNT" /><published>2025-01-22T00:00:00-05:00</published><updated>2025-01-22T00:00:00-05:00</updated><id>https://dfirtnt.github.io/2025/01/22/welcome-to-dfir-tnt</id><content type="html" xml:base="https://dfirtnt.github.io/2025/01/22/welcome-to-dfir-tnt/"><![CDATA[<table>
+  <tbody>
+    <tr>
+      <td>Welcome to DFIR TNT - Digital Forensics</td>
+      <td>Incident Response</td>
+      <td>Tips and Tricks!</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>This site is currently being migrated from WordPress to GitHub Pages. More content coming soon!</p>
+
+<h2 id="what-to-expect">What to Expect</h2>
+
+<ul>
+  <li>Digital forensics techniques and tools</li>
+  <li>Incident response methodologies</li>
+  <li>Security analysis tips and tricks</li>
+  <li>Technical deep-dives into cyber threats</li>
+</ul>
+
+<p>Stay tuned for the full migration!</p>]]></content><author><name>Andrew Skatoff</name></author><category term="DFIR" /><category term="Welcome" /><category term="digital forensics" /><category term="incident response" /><summary type="html"><![CDATA[Welcome to DFIR TNT - Digital Forensics Incident Response Tips and Tricks!]]></summary></entry></feed>
