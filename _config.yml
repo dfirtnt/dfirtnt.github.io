@@ -35,3 +35,6 @@ defaults:
       comments: false
       share: true
       related: true
+
+# Sitemap
+sitemap: true

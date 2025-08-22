@@ -304,6 +304,7 @@ PLATFORMS
 
 DEPENDENCIES
   github-pages
+  jekyll-sitemap
   minima (~> 2.5)
 
 BUNDLED WITH
