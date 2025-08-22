@@ -7,10 +7,8 @@ baseurl: ""
 # Theme
 theme: minima
 
-# Site author
-author:
-  name: "Andrew Skatoff"
-  bio: "Digital Forensics and Incident Response"
+# Site author (simplified for Minima theme)
+author: "Andrew Skatoff"
 
 # Build settings
 markdown: kramdown
