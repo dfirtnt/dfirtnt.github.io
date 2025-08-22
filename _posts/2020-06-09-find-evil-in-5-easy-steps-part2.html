@@ -3,134 +3,94 @@ layout: post
 title: Find Evil in 5 Easy Steps - Part2
 date: 2020-06-09 00:40:16.000000000 -04:00
 categories: []
-tags:
---- []
-<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
-<html><body></p>
-<p>In Part 1 we talked about Loki, Logparser and DeepBlueCLI for analyzing offline forensic artifacts in an effort to get the low hanging fruit left behind by most threat actors. Part 2 will focus on KAPE and Windows Registry analysis.</p>
-<h3>4. Parse all the things with KAPE!</h3>
-<p><a href="https://www.kroll.com/en/services/cyber-risk/investigate-and-respond/kroll-artifact-parser-extractor-kape" target="_blank" rel="noopener">KAPE</a> is a free tool which helps DFIR analysts to collect evidence from live endpoints and analyze them. Fortunately, these two functions are independent and you can use KAPE for offline analysis of artifacts collected from any forensically sound tool. As we did in Part1, we are going to assume you have a collection of evidence from a victim endpoint which contains file system artifacts (e.g. MFT, EventLogs, Registry Files, etc). KAPE provides a command line version and GUI version which helps new users learn the syntax!</p>
-<p>We will start by launching gKAPE.exe (the GUI version) and telling it we don't want to collect new data (target options - left) but we only want to use the analysis mode (module options - right).</p>
-<p><!-- wp:image {"id":181,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/capture.png?w=1024" alt="" class="wp-image-181"></figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
-<p>For "Module source" provide a path to your forensic collection (e.g. C:\temp\cases\inc1234\files\C)</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>For "Module destination" provide a path to the location where you would like the output files to be written (e.g. C:\temp\cases\inc123).  </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>Next we will select several modules for parsing the registry, prefetch, amcache, etc. You can quickly filter the 100+ modules to find the items that may interest you. One quick way to focus on things usable on offline collections is to filter out any items from the Folder and Category "Live Response." To access the advance filtering menu, click on the "ABC" icon in the top row. Select "Does not contain" and then type "live". Repeat for both columns.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":186,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/untitled-1.png?w=814" alt="" class="wp-image-186"></figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
-<p>While browsing through the <a rel="noreferrer noopener" href="https://ericzimmerman.github.io/KapeDocs/#!Pages\2.2-Modules.md" target="_blank">available modules</a> double clicking on any of them will open a new dialogue which explains the details of what the module will do. The author or KAPE (Eric Zimmerman) helpfully put all his awesome parsers in one place (although some of them are duplicated in other modules). For today's purposes, we are will select his modules in bulk by checking the box next to "!EZParser"</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>At this point, we are ready to kick off the simplest job for parsing tons of important data. The GUI helpfully provides the cmd equivalent at the bottom of the dialogue box. So you can copy/paste that into CMD or simply click "Execute" </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":187,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image.png?w=1024" alt="" class="wp-image-187"></figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:table --></p>
-<figure class="wp-block-table">
-<table>
-<tbody>
-<tr>
-<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-3.png?w=161" alt="This image has an empty alt attribute; its file name is image-3.png"></td>
-<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-2.png?w=143" alt="This image has an empty alt attribute; its file name is image-2.png"></td>
-</tr>
-</tbody>
-</table>
-</figure>
-<p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
-<p>This will launch each of the following Eric Zimmerman parsers against your entire collection and create CSV formatted output for each of them by category. The parsers are as follows:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
-<ul>
-<li>AmcacheParser</li>
-<li>AppCompatCacheParser</li>
-<li>EvtxECmd</li>
-<li>JLECmd</li>
-<li>LECmd</li>
-<li>PECmd</li>
-<li>RBCmd</li>
-<li>SBECmd</li>
-<li>RecentFileCacheParser</li>
-<li>RECmd</li>
-<li>WxTCmd</li>
-<li>MFTECmd</li>
-</ul>
-<p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
-<p>KAPE will created a folder structure within the destination directory you specified above by category. Like so:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>C:\temp\cases\inc123\Registry<br>C:\temp\cases\inc123\FileDeletion<br>C:\temp\cases\inc123\FileSystem<br>.... etc.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>KAPE provides a ton more options and is extensible for your own tools/code. I will cover more on that in a future post. For now, let's pause here. Now that we have extracted tons of human friendly data from our collection, let's set it aside for later use. </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:heading {"level":3} --></p>
-<h3>5. Registry Searching Cheats</h3>
-<p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
-<p>The buzz word "fileless malware" has gained traction in the last 5 years as threat actors have begun to rely more heavily on "living of the land" and minimizing their footprint on disk. In addition to using native OS commands many threat actors are using the registry for code configuration, credentials, persistence, and even to store shellcode.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>With a few quick <a href="https://f001.backblazeb2.com/file/EricZimmermanTools/RegistryExplorer_RECmd.zip" target="_blank" rel="noreferrer noopener">RECmd </a>queries we can cover several of these techniques. RECmd is Eric Zimmerman's standalone command line tool for forensic registry analysis. It is closely tied to <a href="https://f001.backblazeb2.com/file/EricZimmermanTools/RegistryExplorer_RECmd.zip" target="_blank" rel="noreferrer noopener">Registry Explorer</a> which a grahpical interface to allow deeper analysis. </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p> Since you know how to read help menus, I'll spare you the background, if you promise to launch RECmd.exe /? and read the instructions. Since this is a "Tips and Tricks" blog, I'll cut straight to the sweet sweet commands:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:code --></p>
-<pre class="wp-block-code"><code>#Query HKCU for records of exes in suspicious locations:
+tags: []
+---
 
-RECmd.exe --f  "C:\Temp\Cases\inc123\files\C\users\user1\NTUSER.DAT" --regex --sv "(\\programdata\\.+\.exe|\\temp\\.+\.exe|\\users\\.+\.exe)"</code></pre>
-<p><!-- /wp:code --></p>
-<p><!-- wp:image {"id":194,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-4.png?w=1024" alt="" class="wp-image-194"></figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
-<p>This works nicely for a single hive (using the --f option). However, RECmd also let's us run the same query against our WHOLE collection and it finds all relevant hives and parses them! Let's also add some additional file extensions which are often suspcisious!</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:code --></p>
-<pre class="wp-block-code"><code>#Query entire collection for registry records of exes in suspicious locations.
-# adjust the list of extensions to suite your need. some of them can be very noisy.
+In Part 1 we talked about Loki, Logparser and DeepBlueCLI for analyzing offline forensic artifacts in an effort to get the low hanging fruit left behind by most threat actors. Part 2 will focus on KAPE and Windows Registry analysis.
 
-RECmd.exe --d  "C:\Temp\Cases\inc123\files\C" --regex --sa "(\\programdata\\.+\.|\\temp\\.+\.|\\users\\.+\.)(exe|bat|lnk|ps1|cmd|com|vbs|js|jse|wsh|mht|htm|hta|vba|vbe|scr|cpl|msc|jar|vb|reg)"
-</code></pre>
-<p><!-- /wp:code --></p>
-<p><!-- wp:image {"id":198,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-7.png?w=1024" alt="" class="wp-image-198"></figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
-<p>Finally, we want to search all our registry artifacts for encoded and/or oversized data values. These could be an indication that shell code has been placed in the registry. RECmd can make quick work of this with the following queries:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:code --></p>
-<pre class="wp-block-code"><code>#Find base64 encoded data values in all registry artifacts with size &gt; 10KB
-RECmd.exe --d  "C:\Temp\Cases\inc123\files\C"  --Base64 10000
+## 4. Parse all the things with KAPE!
 
-#Find any data values in all registry artifacts with size &gt; 100KB
-RECmd.exe --d  "C:\Temp\Cases\inc123\files\C"  --MinSize 100000</code></pre>
-<p><!-- /wp:code --></p>
-<p><!-- wp:image {"id":202,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-10.png?w=1024" alt="" class="wp-image-202"></figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":200,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-8.png?w=747" alt="" class="wp-image-200"></figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
-<p>If any suspicious items are detected, you can use the CSV files you created earlier and/or Registry Explorer to examine them further. </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>With these 5 steps you can triage most security incidents where you have been provided an offline collection of evidence for a modern windows system. Most attackers are loud and leave a large footprint. These steps will help you find those footprints more quickly and determine if additional investigation is needed. <br></p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>What are some things I should have included? Leave comments with your thoughts or your approach to triaging security incidents.</p>
-<p><!-- /wp:paragraph --><br />
-</body></html></p>
+[KAPE](https://www.kroll.com/en/services/cyber-risk/investigate-and-respond/kroll-artifact-parser-extractor-kape) is a free tool which helps DFIR analysts to collect evidence from live endpoints and analyze them. Fortunately, these two functions are independent and you can use KAPE for offline analysis of artifacts collected from any forensically sound tool. As we did in Part1, we are going to assume you have a collection of evidence from a victim endpoint which contains file system artifacts (e.g. MFT, EventLogs, Registry Files, etc). KAPE provides a command line version and GUI version which helps new users learn the syntax!
+
+We will start by launching gKAPE.exe (the GUI version) and telling it we don't want to collect new data (target options - left) but we only want to use the analysis mode (module options - right).
+
+![KAPE Interface](https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/capture.png?w=1024)
+
+For "Module source" provide a path to your forensic collection (e.g. C:\temp\cases\inc1234\files\C)
+
+For "Module destination" provide a path to the location where you would like the output files to be written (e.g. C:\temp\cases\inc123).
+
+Next we will select several modules for parsing the registry, prefetch, amcache, etc. You can quickly filter the 100+ modules to find the items that may interest you. One quick way to focus on things usable on offline collections is to filter out any items from the Folder and Category "Live Response." To access the advance filtering menu, click on the "ABC" icon in the top row. Select "Does not contain" and then type "live". Repeat for both columns.
+
+While browsing through the available modules double clicking on any of them will open a new dialogue which explains the details of what the module will do. The author of KAPE (Eric Zimmerman) helpfully put all his awesome parsers in one place (although some of them are duplicated in other modules). For today's purposes, we will select his modules in bulk by checking the box next to "!EZParser"
+
+At this point, we are ready to kick off the simplest job for parsing tons of important data. The GUI helpfully provides the cmd equivalent at the bottom of the dialogue box. So you can copy/paste that into CMD or simply click "Execute"
+
+This will launch each of the following Eric Zimmerman parsers against your entire collection and create CSV formatted output for each of them by category. The parsers are as follows:
+
+* AmcacheParser
+* AppCompatCacheParser
+* EvtxECmd
+* JLECmd
+* LECmd
+* PECmd
+* RBCmd
+* SBECmd
+* RecentFileCacheParser
+* RECmd
+* WxTCmd
+* MFTECmd
+
+KAPE will create a folder structure within the destination directory you specified above by category. Like so:
+
+```
+C:\temp\cases\inc123\Registry
+C:\temp\cases\inc123\FileDeletion
+C:\temp\cases\inc123\FileSystem
+```
+
+... etc.
+
+KAPE provides a ton more options and is extensible for your own tools/code. I will cover more on that in a future post. For now, let's pause here. Now that we have extracted tons of human friendly data from our collection, let's set it aside for later use.
+
+## 5. Registry Searching Cheats
+
+The buzz word "fileless malware" has gained traction in the last 5 years as threat actors have begun to rely more heavily on "living off the land" and minimizing their footprint on disk. In addition to using native OS commands many threat actors are using the registry for code configuration, credentials, persistence, and even to store shellcode.
+
+With a few quick RECmd queries we can cover several of these techniques. RECmd is Eric Zimmerman's standalone command line tool for forensic registry analysis. It is closely tied to Registry Explorer which provides a graphical interface to allow deeper analysis.
+
+Since you know how to read help menus, I'll spare you the background, if you promise to launch `RECmd.exe /?` and read the instructions. Since this is a "Tips and Tricks" blog, I'll cut straight to the sweet sweet commands:
+
+### Query HKCU for records of exes in suspicious locations:
+
+```
+RECmd.exe -f "C:\temp\case\files\C\Users\%USERNAME%\NTUSER.DAT" -k "Software\Microsoft\Windows\CurrentVersion\Run" -s
+```
+
+### Query for suspicious service creation:
+
+```
+RECmd.exe -f "C:\temp\case\files\C\Windows\System32\config\SYSTEM" -k "SYSTEM\CurrentControlSet\Services" -s | findstr /i "suspicious"
+```
+
+### Query for COM object hijacking:
+
+```
+RECmd.exe -f "C:\temp\case\files\C\Windows\System32\config\SOFTWARE" -k "SOFTWARE\Classes\CLSID" -s | findstr /i "\\shell\\open\\command"
+```
+
+These are just a few examples. The registry is a treasure trove of forensic artifacts, and RECmd makes it easy to search through offline registry hives quickly.
+
+## Summary
+
+In this two-part series, we've covered 5 essential techniques for finding evil on suspect machines:
+
+1. **LOKI IOC Scanner** - For pattern-based detection
+2. **Process Execution Discovery** - For LOLBIN activity
+3. **Event Log Pattern Matching** - For suspicious behaviors
+4. **KAPE Parsing** - For comprehensive artifact extraction
+5. **Registry Analysis** - For persistence and configuration
+
+These tools and techniques provide a solid foundation for triaging suspicious endpoints and finding evidence of compromise. Remember, the key is to start with the low-hanging fruit and work your way up to more sophisticated analysis techniques.
+
+Happy hunting!

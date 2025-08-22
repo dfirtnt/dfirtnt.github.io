@@ -6,144 +6,101 @@ categories:
 - IRTriage
 - Log Analysis
 - Triage
-tags:
---- []
-<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
-<!-- wp:paragraph --><html><body></p>
-<p>Some SOC alerts are so precise that a very specific set of response actions is warranted. For example, if a malicious email is detected, check if the user clicked on it. EDR events or forensic artifacts from the filesystem can be used to answer that question. However, when you have more ambiguous "detections" such as those which come from machine learning use-cases (e.g. suspicious traffic patterns), the guidance is often something like "verify the integrity of the endpoint."</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>I like to call these "find evil" cases. The goal in these cases is to look for any indications of attack/compromise, abuse, lateral movement, general fishy business, etc.  The following are my go-to investigative steps to use in these circumstances. They are not elite, but they are a good place to start in scooping up any low hanging fruit that sloppy adversaries have left behind. These techniques assume you have pulled file <a href="https://github.com/dfirtnt/PlasoTriageArtifacts">system artifacts</a> (e.g. MFT, temp files, appdata, registry, lnk files, event logs, etc.). Tools like <a href="https://isc.sans.edu/forums/diary/Introduction+to+KAPE/24896/">KAPE </a>are an excellent option for remote artifact collection.  In part 1, I will cover 3 of the top approaches I like to take when triaging a device which has unspecified suspicious events associated with it. </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph {"fontSize":"large"} --></p>
-<p class="has-large-font-size">1. <a href="https://www.nextron-systems.com/loki/">LOKI IOC Scanner</a></p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>LOKI IOC Scanner is a unique tool that examines systems for anomalous patterns of events, file artifacts, processes and more. LOKI can be run on live systems or against triage file collections. In this context (file collections) the -p switch can be used to point the scanner to the path where the file artifacts are stored. It supports these different types of indicators:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
-<ul>
-<li>MD5 / SHA1 / SHA256 hashes</li>
-<li>Yara Rules (applied to file data and process memory)</li>
-<li>Hard Indicator Filenames based on Regular Expression (e.g. \\pwdump\.exe)</li>
-<li>Soft Indicator Filenames based on Regular Expressions (e.g. Windows\\[\w]\.exe)</li>
-</ul>
-<p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
-<p>First, get the latest updates from github. This will provide you the latest code and the latest free rules from Nextron Systems (and Florian Roth). Note, it is best to run this as an admin.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:verse --></p>
-<pre class="wp-block-verse"><em>C:\Temp\Tools\loki_0.29.1\loki&gt; .\loki-upgrader.exe</em></pre>
-<p><!-- /wp:verse --></p>
-<p><!-- wp:paragraph --></p>
-<p>After this update, I like to add my own curated YARA signatures to these scans. This could be private commercially purchased rules, internally develop signatures, or your favorite <a href="https://github.com/InQuest/awesome-yara">free YARA signature repository</a>. This can be done easily by dropping your *.yar(a) files into the LOKI subfolder: "C:\Temp\Tools\loki_0.29.1\loki\signature-base\yara\"</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>Next, run LOKI scanner against the file collection.  Note, it is best to run this as an admin.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:verse --></p>
-<pre class="wp-block-verse"><em>Loki -p  c:\temp\case\files\c\ --scriptanalysis  --rootkit --noprocscan -l ./LOKI.log --dontwait --intense --maxworkingset 5000</em></pre>
-<p><!-- /wp:verse --></p>
-<p><!-- wp:paragraph --></p>
-<p>Note, if you happen to have procdumps, omit the "--noprocscan" switch from the above.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>LOKI output displays in standard out.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":134,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/03/loki1.png?w=1024" alt="" class="wp-image-134"><br />
-<figcaption>Loki scanned another version of itself that I was testing… <strong>False Positive</strong>. It found pattern matches in the second instance’s pattern files… well done!</figcaption>
-</figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":136,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/03/loki2.png?w=1024" alt="" class="wp-image-136"><br />
-<figcaption>Loki found a network traffic analysis tool that hackers like.</figcaption>
-</figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":138,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/03/loki3-2.png?w=1024" alt="" class="wp-image-138"><br />
-<figcaption>LOKI found something that is truly concerning. In this case a visual basic script is being launched at startup.</figcaption>
-</figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:paragraph {"fontSize":"large"} --></p>
-<p class="has-large-font-size">2. Process Execution - <a href="https://attack.mitre.org/tactics/TA0007/">Discovery</a></p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>If an advanced attacker has gained access to the suspect device, a common next step is to perform reconnaissance of the victim device. This often takes the form of executing native OS commands with a technique often called <a href="https://blog.talosintelligence.com/2019/11/hunting-for-lolbins.html">"living off the land"</a> (LOL). These native binaries are sometimes called #<a href="https://lolbas-project.github.io/">LOLBINS</a>. </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>Reviewing the security eventlog for a high for process 4688 (process execution) for these LOLBINS can be a fast way to identify shenanigans. Logparser to the rescue:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:preformatted --></p>
-<pre class="wp-block-preformatted">LogParser.exe -stats:OFF -i:EVT "SELECT TimeGenerated AS Date, EXTRACT_TOKEN(Strings, 1, '|') AS Username, EXTRACT_TOKEN(Strings, 2, '|') AS Domain, EXTRACT_TOKEN(Strings, 5, '|') AS Process FROM '.\files\c\windows\system32\winevt\logs\Security.evtx' WHERE EventID = 4688 AND (Process LIKE '%\\at.exe'  OR Process LIKE '%\\ceipdata.exe'  OR Process LIKE '%\\ceiprole.exe'  OR  Process LIKE '%\\chcp.exe' OR Process LIKE '%\\cmd.exe'  OR Process LIKE '%\\compmgmtlauncher.exe'  OR Process LIKE '%\\csvde.exe'  OR Process LIKE '%\\dsget.exe' OR Process LIKE '%\\dsquery.exe'  OR Process LIKE '%\\esentutl.exe'  OR Process LIKE '%\\\\find.exe'  OR Process LIKE '%\\fsutil.exe'  OR Process LIKE '%\\tracert.exe'  OR Process LIKE '%\\tree.exe' OR Process LIKE '%\\type.exe' OR Process LIKE '%\\vds.exe' OR Process LIKE '%\\vdsldr.exe' OR Process LIKE '%\\ver.exe' OR Process LIKE '%\\wevtutil.exe' OR Process LIKE '%\\whoami.exe' OR Process LIKE '%\\WinrsHost.exe' OR Process LIKE '%\\inver.exe' OR Process LIKE '%\\wmic.exe' OR Process LIKE '%\\wusa.exe')"</pre>
-<p><!-- /wp:preformatted --></p>
-<p><!-- wp:paragraph --></p>
-<p>Modify to include your own list of LOLBINS (here's <a href="https://github.com/dfirtnt/AwesomeReconDetectionStrings">mine</a>). Or use a similar approach to query the contents of the prefetch folder:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>For an even more rudimentary approach, just check the prefetch folder for evidence of execution of suspicious exes. Here's a caveman-level quick way to do it.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:preformatted --></p>
-<pre class="wp-block-preformatted">dir .\C\windows\prefetch | grep -i -E "(at.exe|ceipdata.exe|ceiprole.exe|chcp.exe|cmd.exe|compmgmtlauncher.exe|csvde.exe|dsget.exe|dsquery.exe|esentutl.exe|find.exe|fsutil.exe|hostname.exe| ipconfig.exe|ldifde.exe|nbtstat.exe|net.exe|net1.exe|netdom.exe|netsh.exe|netstat.exe|nltest.exe|nslookup.exe|ping.exe|psexec.exe|qprocess.exe|query.exe|quser.exe|qwinsta.exe|reg.exe|sc.exe|schtasks.exe|servermanagercmd.exe|set.exe|systeminfo.exe|tasklist.exe|time.exe|tracert.exe|tree.exe|type.exe|vds.exe|vdsldr.exe|ver.exe|wevtutil.exe|whoami.exe|WinrsHost.exe|inver.exe|wmic.exe|wusa.exe|setup.exe|wscript.exe)"</pre>
-<p><!-- /wp:preformatted --></p>
-<p><!-- wp:paragraph --></p>
-<p>Of course using grep -f to import a list of strings is more elegant, but for blog purposes, I wanted to show the full mess.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph {"fontSize":"large"} --></p>
-<p class="has-large-font-size">3. Pattern Matching in Event Logs</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>Searching event logs for suspicious patterns is a business fraught with regex and ngrams challenges. Thankfully, Eric Conrad's <a href="https://github.com/sans-blue-team/DeepBlueCLI">DeepBlueCLI </a>can create some shortcuts for us. It proveds <a href="https://www.dropbox.com/s/50623g2yahys6bz/Threat%20Hunting%20via%20Windows%20Event%20Logs.pdf?dl=0">detection</a> for the following:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
-<ul>
-<li>Suspicious account behavior</li>
-<li>Command line/Sysmon/PowerShell auditing</li>
-<li>Service auditing</li>
-<li>Mimikatz</li>
-<li>EMET &amp; Applocker Blocks</li>
-<li>...and more</li>
-</ul>
-<p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
-<p>It leverages numerous text analysis functions to find evil! Some examples include:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
-<ul>
-<li>Examining length and character entropy from 4688 events (indicative of base64 encoded shellcode or com object hijacking)</li>
-<li>Powershell via WMI or PSExec</li>
-<li>Suspiciously named service creation (suggests mimikatz)</li>
-<li>... and more</li>
-</ul>
-<p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
-<p>DeepBlueCLI supports 5 different event logs in EVTX format. It can scan the system's live logs, or it can scan EVTX files in a triage collection. </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>Start by launching Powershell as an Admin. The perform the following:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:code --></p>
-<pre class="wp-block-code"><code>PS C:\Temp\Tools\DeepBlueCLI-master\DeepBlueCLI-master&gt; .\DeepBlue.ps1 -file C:\Temp\triage_collection\C\Windows\System32\winevt\Logs\Security.evtx  | Out-GridView</code></pre>
-<p><!-- /wp:code --></p>
-<p><!-- wp:image {"id":158,"sizeSlug":"large"} --></p>
-<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/03/gridview.jpeg?w=1024" alt="" class="wp-image-158"><br />
-<figcaption>Out-Gridview version of output from DeepBlueCLI</figcaption>
-</figure>
-<p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
-<p>The trailing "|Out-Gridview" will cause the results to pop up in a GUI interface (shown above). If you omit the pipe the results will simply go to stdout.  Alternatively,  use the following to export to CSV:  "| Export-Csv -Path .\Security.csv."  You may want to create a batch file using the CSV output option. Or even use wildcards to perform analysis on all the relevant event logs in a single folder that you have collected from multiple machines like so:</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:code --></p>
-<pre class="wp-block-code"><code>.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*power*.evtx'  | Export-Csv -Path .\DBC_Psh_Out.txt
-.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*Security*.evtx'  | Export-Csv -Path .\DBC_Sec_Out.txt
-.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*system*.evtx'  | Export-Csv -Path .\DBC_Sys_Out.txt
-.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*Application*.evtx'  | Export-Csv -Path .\DBC_App_Out.txt
-.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*AppLocker*.evtx'  | Export-Csv -Path .\DBC_Appl_Out.txt</code></pre>
-<p><!-- /wp:code --></p>
-<p><!-- wp:paragraph --></p>
-<p>DeepBlueCLI also contains sample event logs for known bad events so you can practice using the tool to identify actual suspicious/malicious events and compare with items you may be detecting on your systems. </p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>In this post we covered 3 relatively easy ways to quickly find evil on suspect machines. In part 2 I'll cover the two more steps to finding evil with a focus on identifying persistence mechanisms. </p>
-<p><!-- /wp:paragraph --><br />
-</body></html></p>
+tags: []
+---
+
+Some SOC alerts are so precise that a very specific set of response actions is warranted. For example, if a malicious email is detected, check if the user clicked on it. EDR events or forensic artifacts from the filesystem can be used to answer that question. However, when you have more ambiguous "detections" such as those which come from machine learning use-cases (e.g. suspicious traffic patterns), the guidance is often something like "verify the integrity of the endpoint."
+
+I like to call these "find evil" cases. The goal in these cases is to look for any indications of attack/compromise, abuse, lateral movement, general fishy business, etc. The following are my go-to investigative steps to use in these circumstances. They are not elite, but they are a good place to start in scooping up any low hanging fruit that sloppy adversaries have left behind.
+
+These techniques assume you have pulled file system artifacts (e.g. MFT, temp files, appdata, registry, lnk files, event logs, etc.). Tools like KAPE are an excellent option for remote artifact collection. In part 1, I will cover 3 of the top approaches I like to take when triaging a device which has unspecified suspicious events associated with it.
+
+## 1. LOKI IOC Scanner
+
+LOKI IOC Scanner is a unique tool that examines systems for anomalous patterns of events, file artifacts, processes and more. LOKI can be run on live systems or against triage file collections. In this context (file collections) the -p switch can be used to point the scanner to the path where the file artifacts are stored.
+
+It supports these different types of indicators:
+* MD5 / SHA1 / SHA256 hashes
+* Yara Rules (applied to file data and process memory)
+* Hard Indicator Filenames based on Regular Expression (e.g. \\pwdump\.exe)
+* Soft Indicator Filenames based on Regular Expressions (e.g. Windows\\[\w]\.exe)
+
+First, get the latest updates from github. This will provide you the latest code and the latest free rules from Nextron Systems (and Florian Roth). Note, it is best to run this as an admin.
+
+```
+C:\Temp\Tools\loki_0.29.1\loki> .\loki-upgrader.exe
+```
+
+After this update, I like to add my own curated YARA signatures to these scans. This could be private commercially purchased rules, internally develop signatures, or your favorite free YARA signature repository. This can be done easily by dropping your *.yar(a) files into the LOKI subfolder: "C:\Temp\Tools\loki_0.29.1\loki\signature-base\yara\"
+
+Next, run LOKI scanner against the file collection. Note, it is best to run this as an admin.
+
+```
+Loki -p  c:\temp\case\files\c\ --scriptanalysis  --rootkit --noprocscan -l ./LOKI.log --dontwait --intense --maxworkingset 5000
+```
+
+Note, if you happen to have procdumps, omit the "--noprocscan" switch from the above.
+
+LOKI output displays in standard out. Loki scanned another version of itself that I was testing… False Positive. It found pattern matches in the second instance's pattern files… well done! Loki found a network traffic analysis tool that hackers like. LOKI found something that is truly concerning. In this case a visual basic script is being launched at startup.
+
+## 2. Process Execution - Discovery
+
+If an advanced attacker has gained access to the suspect device, a common next step is to perform reconnaissance of the victim device. This often takes the form of executing native OS commands with a technique often called "living off the land" (LOL). These native binaries are sometimes called #LOLBINS.
+
+Reviewing the security eventlog for a high for process 4688 (process execution) for these LOLBINS can be a fast way to identify shenanigans. Logparser to the rescue:
+
+```
+LogParser.exe -stats:OFF -i:EVT "SELECT TimeGenerated AS Date, EXTRACT_TOKEN(Strings, 1, '|') AS Username, EXTRACT_TOKEN(Strings, 2, '|') AS Domain, EXTRACT_TOKEN(Strings, 5, '|') AS Process FROM '.\files\c\windows\system32\winevt\logs\Security.evtx' WHERE EventID = 4688 AND (Process LIKE '%\\at.exe'  OR Process LIKE '%\\ceipdata.exe'  OR Process LIKE '%\\ceiprole.exe'  OR  Process LIKE '%\\chcp.exe' OR Process LIKE '%\\cmd.exe'  OR Process LIKE '%\\compmgmtlauncher.exe'  OR Process LIKE '%\\csvde.exe'  OR Process LIKE '%\\dsget.exe' OR Process LIKE '%\\dsquery.exe'  OR Process LIKE '%\\esentutl.exe'  OR Process LIKE '%\\\\find.exe'  OR Process LIKE '%\\fsutil.exe'  OR Process LIKE '%\\tracert.exe'  OR Process LIKE '%\\tree.exe' OR Process LIKE '%\\type.exe' OR Process LIKE '%\\vds.exe' OR Process LIKE '%\\vdsldr.exe' OR Process LIKE '%\\ver.exe' OR Process LIKE '%\\wevtutil.exe' OR Process LIKE '%\\whoami.exe' OR Process LIKE '%\\WinrsHost.exe' OR Process LIKE '%\\inver.exe' OR Process LIKE '%\\wmic.exe' OR Process LIKE '%\\wusa.exe')"
+```
+
+Modify to include your own list of LOLBINS (here's mine). Or use a similar approach to query the contents of the prefetch folder:
+
+For an even more rudimentary approach, just check the prefetch folder for evidence of execution of suspicious exes. Here's a caveman-level quick way to do it.
+
+```
+dir .\C\windows\prefetch | grep -i -E "(at.exe|ceipdata.exe|ceiprole.exe|chcp.exe|cmd.exe|compmgmtlauncher.exe|csvde.exe|dsget.exe|dsquery.exe|esentutl.exe|find.exe|fsutil.exe|hostname.exe| ipconfig.exe|ldifde.exe|nbtstat.exe|net.exe|net1.exe|netdom.exe|netsh.exe|netstat.exe|nltest.exe|nslookup.exe|ping.exe|psexec.exe|qprocess.exe|query.exe|quser.exe|qwinsta.exe|reg.exe|sc.exe|schtasks.exe|servermanagercmd.exe|set.exe|systeminfo.exe|tasklist.exe|time.exe|tracert.exe|tree.exe|type.exe|vds.exe|vdsldr.exe|ver.exe|wevtutil.exe|whoami.exe|WinrsHost.exe|inver.exe|wmic.exe|wusa.exe|setup.exe|wscript.exe)"
+```
+
+Of course using grep -f to import a list of strings is more elegant, but for blog purposes, I wanted to show the full mess.
+
+## 3. Pattern Matching in Event Logs
+
+Searching event logs for suspicious patterns is a business fraught with regex and ngrams challenges. Thankfully, Eric Conrad's DeepBlueCLI can create some shortcuts for us. It provides detection for the following:
+
+* Suspicious account behavior
+* Command line/Sysmon/PowerShell auditing
+* Service auditing
+* Mimikatz
+* EMET & Applocker Blocks
+* ...and more
+
+It leverages numerous text analysis functions to find evil! Some examples include:
+
+* Examining length and character entropy from 4688 events (indicative of base64 encoded shellcode or com object hijacking)
+* Powershell via WMI or PSExec
+* Suspiciously named service creation (suggests mimikatz)
+* ... and more
+
+DeepBlueCLI supports 5 different event logs in EVTX format. It can scan the system's live logs, or it can scan EVTX files in a triage collection.
+
+Start by launching Powershell as an Admin. Then perform the following:
+
+```
+PS C:\Temp\Tools\DeepBlueCLI-master\DeepBlueCLI-master> .\DeepBlue.ps1 -file C:\Temp\triage_collection\C\Windows\System32\winevt\Logs\Security.evtx | Out-GridView
+```
+
+The trailing "|Out-Gridview" will cause the results to pop up in a GUI interface. If you omit the pipe the results will simply go to stdout.
+
+Alternatively, use the following to export to CSV: "| Export-Csv -Path .\Security.csv." You may want to create a batch file using the CSV output option. Or even use wildcards to perform analysis on all the relevant event logs in a single folder that you have collected from multiple machines like so:
+
+```
+.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*power*.evtx' | Export-Csv -Path .\DBC_Psh_Out.txt
+.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*Security*.evtx' | Export-Csv -Path .\DBC_Sec_Out.txt
+.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*system*.evtx' | Export-Csv -Path .\DBC_Sys_Out.txt
+.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*Application*.evtx' | Export-Csv -Path .\DBC_App_Out.txt
+.\DeepBlue.ps1 -file 'C:\temp\Data\EventLogs\evtx\*AppLocker*.evtx' | Export-Csv -Path .\DBC_Appl_Out.txt
+```
+
+DeepBlueCLI also contains sample event logs for known bad events so you can practice using the tool to identify actual suspicious/malicious events and compare with items you may be detecting on your systems.
+
+In this post we covered 3 relatively easy ways to quickly find evil on suspect machines. In part 2 I'll cover the two more steps to finding evil with a focus on identifying persistence mechanisms.
