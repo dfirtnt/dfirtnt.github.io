@@ -1,0 +1,253 @@
+---
+layout: post
+title: Using Mac OSXCollector with Splunk
+date: 2018-09-07 19:45:46.000000000 -04:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- DataViz
+- IRTriage
+- RemoteIR
+- Triage
+tags: []
+meta:
+  _publicize_done_external: a:1:{s:7:"twitter";a:1:{i:21008142;s:59:"https://twitter.com/Securitovski/status/1038151385785741312";}}
+  timeline_notification: '1536349550'
+  _rest_api_published: '1'
+  _rest_api_client_id: "-1"
+  _publicize_job_id: '21904857244'
+  _publicize_done_20776003: '1'
+  _wpas_done_21008142: '1'
+  publicize_twitter_user: Securitovski
+  publicize_linkedin_url: www.linkedin.com/updates?topic=6443917081665695745
+  _publicize_done_20776005: '1'
+  _wpas_done_21008146: '1'
+  _elasticsearch_data_sharing_indexed_on: '2024-11-18 13:39:52'
+author:
+  login: amskatoff897216341
+  email: amskatoff@gmail.com
+  display_name: Andrew Skatoff
+  first_name: Andrew
+  last_name: Skatoff
+permalink: "/2018/09/07/using-mac-osxcollector-with-splunk/"
+---
+<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
+<html><body></p>
+<p>I admit, the first time I had the opportunity to switch my work PC to a Mac, I jumped at it. However, I quickly regretted it. I was in a management job that was largely a race against the clock to handle emails, create powerpoints and massage spreadsheets. The learning curve wasn't fitting into my schedule.</p>
+<p>However, in my next job, I had more opportunity to be technical and that's where I fell in love with the Mac. It's a great platform for technical work and don't get me started on the multi-media, digital audio, wonderland that it is... But I digress!  We are here to talk about <span style="text-decoration:underline;">Mac</span> <span style="text-decoration:underline;">Incident Response</span> and <span style="text-decoration:underline;">OSXCollector</span>.</p>
+<p>When responding to a security incident we often want to quickly collect a wide array of data to verify the integrity of the targeted machine. This includes:</p>
+<ul>
+<li>Volatile system state data (what's the machine's situation right now?). This is best handled by a memory forensics and/or interactive commands. My tools of choice if I have physical access to the computer are found: <a href="https://www.objective-see.com/" target="_blank" rel="noopener">here.</a>
+</li>
+<li>Recent time-based data (what happened recently on this machine?). For this, we need logs, some system files, and other time-based artifacts.</li>
+</ul>
+<p>The internet abounds with IR collection scripts that help answer these questions for victim Windows machines, but the field narrows when it comes to Macs. In such a narrow field <a href="https://github.com/Yelp/osxcollector">OSXCollector (created by the DFIR ninjas at Yelp) </a>stands out as one of the best.</p>
+<p>It largely focuses on the historical data (what happened recently?), but it excels in that regard!</p>
+<h4><strong>SO, HOW DO YOU WORK THIS THING?!</strong></h4>
+<p>Running the collection is super simple!</p>
+<p><img class="alignnone size-full wp-image-66" src="https://dfirtnt.wordpress.com/wp-content/uploads/2018/09/screen-shot-2018-09-06-at-4-44-11-pm-e1536347293396.png" alt="screen-shot-2018-09-06-at-4-44-11-pm-e1536266704630.png" width="2192" height="673"></p>
+<p>While OSXCollector pulls various system logs which are useful for incident response and forensics purposes, the main benefit of this tool is what it pulls together from the hundreds of plist files which OS X uses to record settings and historical events. You will find a rather large JSON file in the output directory which contains all this goodness. Your next task will be to figure out how to figure out what's in there.</p>
+<h4>TARGETED SEARCHING</h4>
+<p>If you have a particular indicator (e.g. suspicious domain name, malicious filename, etc), you can simply use strings/grep/findstr to search the JSON file for it. Here are some examples <em>(<i><span style="font-weight:400;">NOTE: </span></i><span style="font-weight:400;">I use GnuWin32 on Windows OS, so the quotes may be different than normal unix syntax)</span>:</em></p>
+<ul>
+<li style="font-weight:400;">
+<span style="font-weight:400;">Report all unique SHA1s:</span></p>
+<ul>
+<li style="font-weight:400;"><span style="font-weight:400;">cat osxcollect-2018_07_10-16_18_28.json | jq .sha1? | sort | uniq -c</span></li>
+<li style="font-weight:400;"><span style="font-weight:400;">jq select(.osxcollector_section==\"kext\").osxcollector_bundle_id osxcollect-2018_07_10-16_18_28.json | grep -v null | more</span></li>
+</ul>
+</li>
+</ul>
+<h4>FIND EVIL EXPLORATION</h4>
+<p style="padding-left:30px;">If you aren't sure what you're looking for (e.g. the case calls for checking for unauthorized software or anomalies which could be malware persistence mechanisms) you will want to be familiar with the structure of the data in the JSON file.</p>
+<h4>DATA-VIZ</h4>
+<p style="padding-left:30px;">While grep and JQ are handy for JSON, I don't think anyone will argue they are user-friendly. I am lucky enough to have access to a Splunk instance which allows more than 500MB of data per day (the limit on the free version). Splunk likes JSON and this particular JSON file does very well with Splunk's automatic parsing logic. So I like to put the JSON file in there to look around. If you have access to an ELK Stack this may be another good option. I used Splunk's Sankey Key visualization to start to help me get a feel for what kinds of data are in this gigantic file.</p>
+<p><img class="alignnone size-full wp-image-69" src="https://dfirtnt.wordpress.com/wp-content/uploads/2018/09/screen-shot-2018-09-07-at-2-55-58-pm.png" alt="Screen Shot 2018-09-07 at 2.55.58 PM" width="2700" height="1280"></p>
+<p>As you can see, there are two high-level categories: osxcollector_section and osxcollector_subsection. There are various "subsection" fields within each of the "sections" and a few "subsections" which appear in multiple "sections."</p>
+<p><span style="font-weight:400;">The appearance of the graph might differ somewhat based on the behavior of the subject user (e.g. this user appears to have not used Chrome very much. If they were a heavy Chrome user, we might see a thicker like for Chrome and perhaps a line from Chrome to the "Downloads" block in the middle.</span></p>
+<h6><em><span style="font-weight:400;">Note the "Mail" section was omitted because there are no subsections and it blew up the graph because it was really large. However, it is a treasure trove of information about emails which is likely to be important in many IR situations.</span></em></h6>
+<p> </p>
+<h6>
+<em>The following simple Splunk query built the graph above. </em><br />
+<em><span style="font-weight:400;">SplunkFu: </span> <span style="font-weight:400;">source=“*osxcollect-2018_07_10-16_18_28.json" | stats count by osxcollector_section osxcollector_subsection</span></em><br />
+</h6>
+<p>Now that we understand the basic structure and boundaries of this data, let's try a few queries. Below are the best ones I have found to start poking around and hopefully find strange/suspicious items.</p>
+<h4>SAMPLE SPLUNK QUERIES</h4>
+<blockquote><p>Startups</p></blockquote>
+<ul>
+<li style="font-weight:400;">
+<span style="text-decoration:underline;">launch_agents</span></p>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_section=startup | stats count by  label program</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="text-decoration:underline;"><span style="font-weight:400;">Login Items</span></span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_section=startup osxcollector_subsection=login_items</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="text-decoration:underline;"><span style="font-weight:400;">Scripting_additions</span></span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_section=startup osxcollector_subsection=scripting_additions| stats count by file_path</span></h5>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote><p>Accounts and Applications</p></blockquote>
+<p style="padding-left:30px;">Application Install History</p>
+<p style="padding-left:30px;"><span style="font-weight:400;">osxcollector_subsection=install_history* osxcollector_section=applications | table displayName processName date| SORT – date</span></p>
+<p> </p>
+<p style="padding-left:30px;"><span style="font-weight:400;">All Installed Apps</span></p>
+<h5 style="padding-left:30px;"><span style="font-weight:400;">osxcollector_subsection=install_history* osxcollector_section=applications processName!=softwareupdated | dedup displayName | table displayName | SORT displayName</span></h5>
+<p style="padding-left:30px;"><span style="font-weight:400;">Recent items by Username</span></p>
+<h5 style="padding-left:30px;"><span style="font-weight:400;">osxcollector_section=accounts osxcollector_subsection=recent_items |stats count by document_name osxcollector_username</span></h5>
+<h5 style="padding-left:30px;">osxcollector_subsection=recent_items recent_type=* | table application_name document_name host_name host_url recent_type server_name</h5>
+<blockquote><p>Downloads</p></blockquote>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_section=downloads OR osxcollector_subsection=downloads | table osxcollector_section osxcollector_subsection  file_path referrer sha1 signature_chain{}sourcetypexattr-wherefrom{}downloads | table url site_url tab_url tab_referrer_url referrer current_path</span></h5>
+<p> </li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">LSQuarantineOriginURLString</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_section=quarantines| stats count by LSQuarantineOriginURLString</span></h5>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">LSQuarantineDataURLString</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_section=quarantines| stats count by  LSQuarantineDataURLString</span></h5>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote><p><strong>Browser Artifacts</strong></p></blockquote>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Chrome Search Terms</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;"> osxcollector_table_name=keyword_search_terms| stats count by term osxcollector_section osxcollector_username<br />
+</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Chrome autofill Addresses:</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_section=chrome  osxcollector_subsection=web_data    osxcollector_table_name=autofill_profiles | table street_address zipcode state<br />
+</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">FireFox TypedUrls</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_table_name=moz_places typed=1| stats count by url<br />
+</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Firefox Favicons</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_subsection=history osxcollector_table_name=moz_favicons url="*" | stats count by url</span></h5>
+<p> </li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">FireFox WebAppStore</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_subsection=webapps_store| stats count by scope<br />
+</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">FireFox Form History</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_subsection=formhistory| stats count by fieldname value<br />
+</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Multi-Browser History</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_subsection=history | TABLE url visit_duration visit_time visit_count title current_path mime_type site_url tab_referrer_url target_path term<br />
+</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Multi-Browsers Local Storage</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_subsection=localstorage OR osxcollector_subsection=local_storage key="2FTXlE.chosenVariants" | rex "(?:[^ \n]* ){9}\w+/\w+_(?P&lt;dom&gt;[a-z]+\.[a-z]+\.[a-z]+)“                          <em>   &lt;&lt;&lt;&lt;this regex needs some help&gt;&gt;&gt;&gt;</em><br />
+</span></h5>
+</li>
+</ul>
+</li>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Multi-Browser Extensions</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">NOT "Not Found" (osxcollector_subsection=addons OR osxcollector_subsection=extension OR osxcollector_subsection=extensions OR osxcollector_subsection=extension_files)</span></h5>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote><p>A few other odds and ends</p></blockquote>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Search Terms</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_table_name=keyword_search_terms | stats count by term osxcollector_section osxcollector_subsection</span></h5>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">Web_data</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">osxcollector_subsection=web_data | TABLE favicon_url short_name suggest_url url image_url new_tab_url alternate_url originating_url keyword value value_lower</span></h5>
+</li>
+</ul>
+</li>
+</ul>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">All events with URLs</span></h5>
+<ul>
+<li style="font-weight:400;">
+<h5><span style="font-weight:400;">LSQuarantineDataURLString=* OR LSQuarantineOriginURLString=* OR alternate_urls=* OR favicon_url=* OR image_url=* OR image_url_post_params=* OR instant_url=* OR new_tab_url=* OR suggest_url=* OR url=* OR url_rank=*</span></h5>
+</li>
+</ul>
+</li>
+</ul>
+<h5></h5>
+<p>Hopefully, this gives you an idea of the power of OSXCollector and a few shortcuts to getting started with analysis. Please comment with suggestions, corrections, or other feedback. Thanks!</body></html></p>

@@ -1,0 +1,112 @@
+---
+layout: post
+title: LogParser EVTX Adventures
+date: 2019-01-13 01:26:42.000000000 -05:00
+type: post
+parent_id: '0'
+published: true
+password: ''
+status: publish
+categories:
+- IRTriage
+- Log Analysis
+- Triage
+tags:
+- DFIR
+- LogAnalysis
+meta:
+  geo_public: '0'
+  _edit_last: '144366846'
+  _publicize_job_id: '26470891101'
+  timeline_notification: '1547342805'
+  _publicize_done_external: a:1:{s:7:"twitter";a:1:{i:21008142;s:59:"https://twitter.com/Securitovski/status/1084260434604118017";}}
+  _publicize_done_20776003: '1'
+  _wpas_done_21008142: '1'
+  publicize_twitter_user: Securitovski
+  publicize_linkedin_url: www.linkedin.com/updates?topic=6490026128252690432
+  _publicize_done_20776005: '1'
+  _wpas_done_21008146: '1'
+  publicize_google_plus_url: https://plus.google.com/112525460051704445259/posts/Lx1UxpJ5VHa
+  _publicize_done_21179320: '1'
+  _wpas_done_21614084: '1'
+  _elasticsearch_data_sharing_indexed_on: '2024-11-18 13:39:52'
+  previously_liked_155942112: '1'
+author:
+  login: amskatoff897216341
+  email: amskatoff@gmail.com
+  display_name: Andrew Skatoff
+  first_name: Andrew
+  last_name: Skatoff
+permalink: "/2019/01/13/logparser-evtx-adventures/"
+---
+<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
+<html><body></p>
+<p>I've been doing IR for a long time and I can't believe I have only now discovered the power of LogParser. Perhaps I was too spoiled by Splunk to actually be forced to learn this awesome tool. But now that I have gotten familiar with it, I see why it is so beloved. It's powerful and SQL-friendly command line capabilities give it a ton of flexibility and provide lots of opportunity for automation. While getting acquainted with it, and wanting to document my learning, I decided to create some batch files which capture syntax and intent.</p>
+<p><strong>Background</strong></p>
+<p>LogParser.exe has been around a long time. Version 2.2 was released around 2006 and there are a few GUI front-ends available (e.g. LogParser Lizard and Log Parser Studio). A quick google search suggests it is more popular among IIS log searchers than EVT(X) uses.</p>
+<p><strong>Goal 1. Converting EVTX to CSV</strong></p>
+<p>I am often handed a set of IR triage artifacts that includes a file system containing event log files in EVTX format. This binary format is truly unfriendly and neither Excel, nor Splunk can work with it. However, LogParser can! If this were all it could do, it woudn't be worth mentioning since there are Powershell options to do this as well:</p>
+<p><em>get-winevent -path .\files\c\windows\system32\winevt\logs\*.evtx| export-csv FileName.csv -useculture</em></p>
+<p>To quote on <a href="https://www.reddit.com/r/computerforensics/comments/8fyqnw/event_log_forensics_with_log_parser/">Redditor</a> ('13cubed'): "While you can certainly obtain logs with Get-WinEvent, Log Parser can query just about any text-based data source, not just logs. It is more scalable, and allows for fast searches of massive amounts of data allowing you to filter on a wide variety of things, such as event ID's, usernames, IP addresses, and more."</p>
+<p>Since I wanted to learn LogParser anyway, I figured it would be helpful to figure this out for starters.</p>
+<p>LogParser doesn't work well with pipes (e.g. logparser.exe &gt; eventlog.csv). Instead, since it uses SQL-like syntax. You have to "INSERT INTO" the location you want to export to.  The following syntax works well for "point and shoot" batch-file double-clicking at the root of a mounted directory of artifacts.</p>
+<p>logparser.exe "select * INTO Security.csv from '.\c\windows\system32\winevt\logs\Security.evtx'" -i:EVT -headers:ON</p>
+<p>A batch file to pull only to the log files mentioned in the SANS poster and JP Cert paper (see Goal 3) can be found <a href="https://github.com/dfirtnt/evtx2csv">here</a>.</p>
+<p>Now that I have CSVs I can use grep, Splunk, ELK or Excel to do further analysis. But I want to be able to do blue-team work even when my fancy analytics tools aren't available.</p>
+<p><strong>Goal 2. Push Button Event Log Triage</strong></p>
+<p>We are all busy. Even if we have the appetite to trawl through thousands of logs manually, if we can speed up the identification of weird/suspicious events, we can apply our brain power elsewhere and be more efficient. I wanted a quick way to summarize certain kinds of information in the logs such that an analyst could look at the output and more quickly identify things which may warrant a closer look.</p>
+<p>Since LogParser seems to think in T-SQL, it is a great command line option for some simple data stacking (aka frequency analysis and anomaly detection). I created a set of queries which stack things like users, processes, services, scheduled tasks, domains, remote machines. I found a great resource with many examples of these commands at this github <a href="https://gist.github.com/exp0se/1bae653b790cf5571d20">page</a> and borrowed a lot of it making small tweaks here and there.  </p>
+<p>Since "pipes" don't work, I had to figure out how to export/append the results to a single file for quick review by an analyst. Adding "INTO exportfile.txt" before "FROM" in the SQL gets the export done, but the append operation also requires " -filemode:0" at the end of each query. I chose to name my export file "WELDS.txt" as a corny acronym for "Windows Event Log Data Summaries."</p>
+<p>These queries dump numerous histogram-like count summaries of interesting data elements. It may be helpful to search at the lower end of the frequency table to fin things which are relatively rare.</p>
+<p><!-- wp:image {"id":98,"align":"center","width":261,"height":135} --></p>
+<div class="wp-block-image">
+<figure class="aligncenter is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2019/01/capture.png" alt="" class="wp-image-98" width="261" height="135"></figure>
+</div>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>My favorite part of this script is the summary of process execution events where I have paired the parent process with the child process. Typically, Proc2 is the parent and Proc1 is the child.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph {"fontSize":"small"} --></p>
+<p class="has-small-font-size">LogParser.exe -stats:OFF -i:EVT "SELECT COUNT(*) AS CNT, EXTRACT_TOKEN(Strings, 5, '|') AS Proc1, extract_token(strings, 13, '|') as Proc2 INTO WELDS.txt FROM '.\files\c\windows\system32\winevt\logs\Security.evtx' WHERE EventID = 4688 AND (Proc1 LIKE '%.%' AND Proc2 LIKE '%.%') GROUP BY Proc1, Proc2 ORDER BY CNT ASC"</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>The results are found near the end of the WELDS.txt file. In the absence of EDR or a memory capture, this can be very helpful in determining strange processes relationships (e.g. we would not want to see cmd.exe starting iexplore.exe).</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":100,"align":"center","width":768,"height":65} --></p>
+<div class="wp-block-image">
+<figure class="aligncenter is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2019/01/capture3.png?w=1024" alt="" class="wp-image-100" width="768" height="65"></figure>
+</div>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p><strong>Goal 3. Know Normal, Find Evil</strong></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>While there are seemingly endless ways to "find evil" SANS has provided us with a "greatest hits" of suspicious event IDs to pay close attention to in the form of the <a href="https://digital-forensics.sans.org/media/SANS_Poster_2018_Hunt_Evil_FINAL.pdf">2018 "Know Normal - Find Evil" poster</a>. This is a quick reference for event logs, registry entries, and prefetch artifacts which incident responders can use to focus their first review of a suspect endpoint.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p>The Japanese CERT has also provided a wonderful <a href="https://www.jpcert.or.jp/english/pub/sr/20170612ac-ir_research_en.pdf">paper</a> on detecting lateral movement with similar artifacts.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><a href="https://github.com/dfirtnt/LP_KNFE">The third batch file</a> seeks to capture each of these pearls of wisdom in a "push-button" friendly way to cull the massive number of events in the evtx files down to only those which are highlighted in these two documents as likely to reveal suspicious activity. I made an attempt to ECHO helpful comments about what each query is doing. This script output is very verbose and most likely needs additional tuning to make it worth while. However, it's a handy quick reference you can copy/paste from to target specific EventIDs of interest when responding to a suspected compromise. </p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><a href="https://github.com/dfirtnt/LP_ReconProc">My final batch file</a> was inspired by the <a href="https://www.youtube.com/watch?v=-0bYcD3_bBs">SANS DFIR Summit presentation</a> on <a href="https://github.com/mbevilacqua/appcompatprocessor">AppCompatProcessor</a>. Among many other promising things (e.g. advance statistical anomaly detection), this tool uses a list of "recon" strings to identify clusters of commands which are more likely to be indicative of an adversary performing recon on the machine or network in search of additional opportunities. Commands such as net.exe, whoami.exe, ping.exe, etc are collected and displayed in timeline format.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:image {"id":103,"width":543,"height":189} --></p>
+<figure class="wp-block-image is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2019/01/capture4.png" alt="" class="wp-image-103" width="543" height="189"></figure>
+<p><!-- /wp:image --></p>
+<p><!-- wp:paragraph --></p>
+<p>That's all for now. Hopefully, this shows you the power of LogParser and gives some ideas on how it can be used to quickly triage evidence in incident response.</p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><em>P.S. this is a small taste of the kind of information I'll be teaching at the SANS FOR508 Class starting in Richmond, VA on March 6th. Details here: </em><a rel="noreferrer noopener" target="_blank" href="https://www.linkedin.com/feed/update/urn:li:activity:6483781362825392128/"><em>https://www.linkedin.com/feed/update/urn:li:activity:6483781362825392128/</em></a></p>
+<p><!-- /wp:paragraph --></p>
+<p><!-- wp:paragraph --></p>
+<p><!-- /wp:paragraph --><br />
+</body></html></p>
