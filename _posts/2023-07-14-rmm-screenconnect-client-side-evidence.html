@@ -10,189 +10,189 @@ tags:
 ---
 - LOL_M&amp;Ms
 <p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
-<!-- wp:paragraph --><html><body></p>
+<html><body></p>
 <p>Inspired by recent <a href="https://media.defense.gov/2023/Jan/25/2003149873/-1/-1/0/JOINT_CSA_RMM.PDF">threat intelligence</a>, I am starting a series on Remote Monitoring and Management (RMM) tools. I wanted start with some testing on ScreenConnect to support investigators who may have a victim device where a user has been tricked into giving control over to an attacker. We want to be able to answer questions like these:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
+<p></p>
 <ul>
-<!-- wp:list-item --></p>
+</p>
 <li>What can we find out about what happened? </li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>Was malware introduced? </li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>Was sensitive data lost?</li>
 <p><!-- /wp:list-item -->
 </ul>
 <p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Here is some obligatory background nonsense from JetPack AI:</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>ScreenConnect is a comprehensive remote access tool developed by ConnectWise. With its robust capabilities, ScreenConnect empowers users to securely and conveniently access and control remote computers, servers, and devices from anywhere in the world. Designed with simplicity and efficiency in mind, ScreenConnect facilitates seamless collaboration, troubleshooting, and support for IT professionals and businesses alike. Whether you need to assist a colleague, provide remote technical support, or access your work computer while on the go, ScreenConnect offers a reliable solution that ensures a seamless and secure remote access experience.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Testing Details</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Testing was done with ScreenConnect agent version 23.4.5.8571 with the "victim" device being Windows10 v1709 (OS Build 16299.309). Telemetry used was</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
+<p></p>
 <ul>
-<!-- wp:list-item --></p>
+</p>
 <li> Sysmon (with the Swift-on-Security config), </li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>PowerShell script block logging and transcripts were enabled. </li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>Noriben was used to automate Procmon output.</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>Memory strings analysis performed with ProcessHacker.</li>
 <p><!-- /wp:list-item -->
 </ul>
 <p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Installation</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>After signing up for a 14-day free trial and setting up my account, they gave me a custom URL to sign into a web UI where I could manage my fleet of "victim" devices. I was able to create my own subdomain like so: "amskatoff.screenconnect.com".</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":459,"width":724,"height":345,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image.png?w=1024" alt="" class="wp-image-459" style="width:724px;height:345px" width="724" height="345"><br />
 <figcaption class="wp-element-caption">Web UI console to manage my fleet</figcaption>
 </figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>After clicking on the "Build+" button (located at the top left corner), I was prompted to build an installer and given several options for the target operating system. This was followed by options to download the executable file or share a link to it. The provided link was:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:code --></p>
+<p></p>
 <pre class="wp-block-code"><code>https://amskatoff.screenconnect.com/Bin/ScreenConnect.ClientSetup.exe?e=Access&amp;y=Guest<br></code></pre>
 <p><!-- /wp:code --></p>
-<p><!-- wp:image {"id":464,"width":350,"height":397,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-2.png?w=903" alt="" class="wp-image-464" style="width:350px;height:397px" width="350" height="397"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Once executed, the installer launched msiexec.exe and installed a service called "ScreenConnect Client (429d9ba6e9123fb4)" which pointed to C:\Program Files (x86)\ScreenConnect Client (429d9ba6e9123fb4)\ScreenConnect.ClientService.exe.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":472,"width":455,"height":516,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-6.png?w=685" alt="" class="wp-image-472" style="width:455px;height:516px" width="455" height="516"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>This file then spawned two instances of a child process called ScreenConnect.WindowsClient.exe one with my default credentials and another one running as System.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":468,"width":742,"height":54,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-3.png?w=1024" alt="" class="wp-image-468" style="width:742px;height:54px" width="742" height="54"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The service running as SYSTEM was also recorded in a 4573 event in the Security Log, indicating sensitive privilege use (SeTcbPrivilege).</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":462,"width":790,"height":366,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-1.png?w=1024" alt="" class="wp-image-462" style="width:790px;height:366px" width="790" height="366"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The remote control session was immediately available through the host web interface. There was no prompt to give full control. A telling application log event occurred at this time, showing that I was now connected to the victim's device.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":469,"width":590,"height":358,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-4.png?w=1024" alt="" class="wp-image-469" style="width:590px;height:358px" width="590" height="358"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>A similar event was logged when the remote connection was severed.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":498,"width":655,"height":156,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-14.png?w=1024" alt="" class="wp-image-498" style="width:655px;height:156px" width="655" height="156"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>An apparently randomly generated C2 domain (instance-bw7a3j-relay.screenconnect.com) was contacted over port 443 as part of this channel. Similar domain name patterns have been observed in threat intelligence reports.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Chatting</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I was unable to find any logs of chat messages. However, my chat strings were found in memory.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":476,"width":583,"height":211,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-8.png?w=1024" alt="" class="wp-image-476" style="width:583px;height:211px" width="583" height="211"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>File Transfers</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Running an arbitrary exe on the client was trivial via the web UI. I was given the option to run elevated. At this time, a folder was created and my exe file was placed into it: <code>C:\Users\REM\Documents\ConnectWiseControl\Temp\evil.exe</code>. The file executed about a minute later. I killed the process, and the file disappeared from the folder shortly thereafter. Shortly after that, the "Temp" folder also vanished.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><span style="text-decoration: underline">Sending a file</span> to the client was performed via the host software. This activity created a new folder: C:\Users\REM\Documents\ConnectWiseControl\<strong>Files </strong>containing my file.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Additionally, the event was recorded in the Application log of the client device.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":500,"width":595,"height":375,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-15.png?w=1024" alt="" class="wp-image-500" style="width:595px;height:375px" width="595" height="375"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>When pulling a file/folder from my victim machine, no event log entries were observed, but changes were observed in the config file found at C:\Users\REM\AppData\Local\ScreenConnect Client (429d9ba6e9123fb4)\user.config. This file appears to change quite a lot during active sessions.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":487,"width":698,"height":108,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-12.png?w=1024" alt="" class="wp-image-487" style="width:698px;height:108px" width="698" height="108"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>During my test to pull an entire folder,  the current (at the time) version of the file showed the following; telling us which folder was exfiltrated.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":494,"width":791,"height":161,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-13.png?w=1024" alt="" class="wp-image-494" style="width:791px;height:161px" width="791" height="161"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>It is unfortunate that the file is so volatile since it holds important evidence that I couldn't find elsewhere. Timestamp correlation with shellbags or carving the user.config files from disk and/or memory could be good next steps to find out which files/folders were taken.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Remote Administration</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Numerous administration tasks are available to the host in the web console, such as:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
+<p></p>
 <ul>
-<!-- wp:list-item --></p>
+</p>
 <li>list/kill tasks</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>list/manage services</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>list/manage "updates"</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>Review a selection of event logs. </li>
 <p><!-- /wp:list-item -->
 </ul>
 <p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>My testing showed that  each of these is accomplished through randomly named ps1 files which are executed with PowerShell as a child process of ScreenConnect.ClientService.exe as follows: </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:code --></p>
+<p></p>
 <pre class="wp-block-code"><code><em>powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Unrestricted -File C:\WINDOWS\TEMP\ScreenConnect\23.4.5.8571\f5955c63-3955-4c4a-ba98-672d4d6291eerun.ps1</em></code></pre>
 <p><!-- /wp:code --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>With script block logging and PowerShell transcripts, we can see what information is being leaked to the host and what other actions were taken.  </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The ps1 launched by the "Updates" query left the following 4104 event in the powershell (Operational)  log. A review of any other 4104 events where the path includes "ScreenConnect" would answer additional remaining questions about these sorts of remote admin diagnostic tasks.  </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":480,"width":588,"height":241,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-9.png?w=1024" alt="" class="wp-image-480" style="width:588px;height:241px" width="588" height="241"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>It's nice to know what <strong>kinds </strong>of data we may have lost to the attacker, but in the case of vulnerabilities, we might want to know the exact data that was spilled.  EventID 4103 and/or our PowerShell transcripts will tell us that story. Here's a sample of the transcript file for the "Updates" query which shows that the host is now aware I haven't patched this client machine since 2018! Additional samples can be found here:<a href="https://github.com/dfirtnt/Testing_Artifacts#:~:text=PowerShell_transcripts.zip"> psh_trasnscript_samples</a></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":484,"width":431,"height":263,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-11.png?w=1024" alt="" class="wp-image-484" style="width:431px;height:263px" width="431" height="263"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>A Summary of Indicators / TTPs</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -251,22 +251,22 @@ tags:
 <figcaption class="wp-element-caption">Huntables</figcaption>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Additional Resources</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Although this research was independent, after I started it, I noticed several other excellent resources online with similar information. If you want to delve deeper, check them out:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
+<p></p>
 <ul>
-<!-- wp:list-item --></p>
+</p>
 <li><a href="https://www.huntandhackett.com/blog/revil-the-usage-of-legitimate-remote-admin-tooling">https://www.huntandhackett.com/blog/revil-the-usage-of-legitimate-remote-admin-tooling</a></li>
 <p><!-- /wp:list-item -->
 </ul>
 <p><!-- /wp:list --></p>
-<p><!-- wp:list --></p>
+<p></p>
 <ul>
-<!-- wp:list-item --></p>
+</p>
 <li><a href="https://digitalforensicsdotblog.wordpress.com/tag/screenconnect/">https://digitalforensicsdotblog.wordpress.com/tag/screenconnect/</a></li>
 <p><!-- /wp:list-item -->
 </ul>

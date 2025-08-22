@@ -53,13 +53,13 @@
 - LOLBAS
 - LOLBINS
 <p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
-<!-- wp:paragraph --><html><body></p>
+<html><body></p>
 <p>Level software is the next RMM tool I wanted to research.  A Crowdstrike threat intelligence <a rel="noreferrer noopener" href="https://www.crowdstrike.com/blog/analysis-of-intrusion-campaign-targeting-telecom-and-bpo-companies/" target="_blank">report </a>mentions this software being abused, but provides little detail. Let's dig in to see what forensic artifacts and telemetry this tool creates to assist incident responders and forensicators. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><em>No thanks. Just take me to the <a href="#iocs-and-ttps">IOCs/TTPs</a>!</em></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -71,7 +71,7 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:table-of-contents {"headings":[{"content":"Publisher","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#Publisher"},{"content":"Capabilities","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#capabilities"},{"content":"Testing Methods","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#testing-methods"},{"content":"Installation","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#installation"},{"content":"Persistence","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#persistence"},{"content":"Reconnaissance","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#reconnaissance"},{"content":"Application Logs","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#application-logs"},{"content":"Script/Command Execution","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#script-command-execution"},{"content":"Remote Control","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#remote-control"},{"content":"File Transfer","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#file-transfer"},{"content":"IOCs and TTPs","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#iocs-and-ttps"},{"content":"Foot Notes","level":2,"link":"https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#foot-notes"}]} --></p>
+<p></p>
 <ol>
 <li><a class="wp-block-table-of-contents__entry" href="https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#Publisher">Publisher</a></li>
 <li><a class="wp-block-table-of-contents__entry" href="https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#capabilities">Capabilities</a></li>
@@ -87,19 +87,19 @@
 <li><a class="wp-block-table-of-contents__entry" href="https://dfirtnt.wordpress.com/2023/09/05/rmm-level-io-forensic-artifacts-and-evidence/#foot-notes">Foot Notes</a></li>
 </ol>
 <p><!-- /wp:table-of-contents --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="Publisher"><strong>Publisher</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Most of the portable executables used by Level are signed by "<strong>Level Software, Inc"</strong>. However, oddly, the main binary level.exe is not signed at all.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="capabilities"><strong>Capabilities</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Basic RMM features, as expected. However, some novel features include <a rel="noreferrer noopener" href="https://level.io/blog/script-based-monitors" target="_blank">alerting </a>and the somewhat ominous  "Background Management", a clearly attractive option for threat actors (aka silent remote arbitrary code execution). </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -111,10 +111,10 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>They boast fully private P2P connections but this requires some additional setup to get WebRTC to work around your firewall and NAT rules.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -126,16 +126,16 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="testing-methods"><strong>Testing Methods</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The Level binaries do not contain version information in the Details section of the properties. So we shall have to make do with saying that testing was performed on the PE versions available on 8/25/2023. SHA1 hashes are in the table below.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"center","id":759,"width":"300px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-69.png?w=648" alt="" class="wp-image-759" style="width:300px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -163,64 +163,64 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="installation"><strong>Installation</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I only performed testing on the Windows client/agent. However, they offer install scripts and support for macOS and Linux. It is noteworthy, the Crowdstrike report indicates their threat actor installed Level on an Esxi appliance. There was no MSI installer offered, but only this simple PowerShell script:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"left","id":761,"width":"537px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image alignleft size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-70.png?w=1024" alt="" class="wp-image-761" style="width:537px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The API_KEY value is not passed to the web server at this time, but is declared as a variable for a component in the ps1 script.  The following stdout was displayed during the install. As expected the same script was recorded in the PowerShell console history.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"center","id":764,"width":"548px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-71.png?w=1024" alt="" class="wp-image-764" style="width:548px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The installation process dropped a file in C:\Windows\Temp\ called "level-windows-amd64.exe." Looking at the contents of the ps1 file shows where this came from. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":771,"width":"371px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-73.png?w=1024" alt="" class="wp-image-771" style="width:371px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":772,"width":"588px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-74.png?w=1024" alt="" class="wp-image-772" style="width:588px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The resultant Url concatenates to <em>https://builds.level.io/stable/level-windows-amd64.exe</em>. Although this binary was no longer on disk, I was able to pull a copy of it from this URL.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The API key was then passed to the exe when it was executed.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":776,"width":"826px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-75.png?w=1024" alt="" class="wp-image-776" style="width:826px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The program is not compatible with 32-bit operating systems, and therefore the installation path is found in "C:\Program Files\Level\</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":781,"width":"221px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-78.png?w=678" alt="" class="wp-image-781" style="width:221px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>We see the installation process also make changes to the Windows firewall rules to allow any protocol inbound to the level agent. This generates a 2004 event in the Windows Firewall logs.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":782,"width":"565px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-79.png?w=1024" alt="" class="wp-image-782" style="width:565px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Upon completion of installation, the web UI shows success and displays the following dashboard:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":778,"width":"639px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-76.png?w=1024" alt="" class="wp-image-778" style="width:639px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="persistence"><strong>Persistence</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The install establishes a service running as local system and establishes a scheduled task to run every 10 minutes to ensure the service is still running. <br>(described here: <a rel="noreferrer noopener" href="https://docs.level.io/1.0/admin-guides/level-watchdog-task" target="_blank">https://docs.level.io/1.0/admin-guides/level-watchdog-task</a>)</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -238,160 +238,160 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="reconnaissance"><strong>Reconnaissance</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>This is the first RMM tool I've seen using osquery to collect machine state information. A shrewd choice by the company, since all this code is proven and maintained <a href="https://github.com/osquery/osquery">elsewhere</a>. I should note that their version of the osqueryi.exe was signed by LevelSoftware, but I assume it is largely intact from the open-source OSQuery project. The image below compares the sigcheck output from the Level version with the latest build from the OpenSource project:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":791,"width":"313px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-84.png?w=1024" alt="" class="wp-image-791" style="width:313px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The OSquery commands are visible in basic process monitoring logs (e.g. Sysmon EventID ==1)</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":796,"width":"535px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-87.png?w=1024" alt="" class="wp-image-796" style="width:535px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":793,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-85.png?w=1024" alt="" class="wp-image-793"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>In general, they include all the normals (running processes, hardware, software, services, etc). If a threat actor has gotten this far, all this data is leaking. Evidence of the user/group enumeration actions are also found in the security log under EventID == 4798.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":797,"width":"285px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-88.png?w=986" alt="" class="wp-image-797" style="width:285px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph {"className":"Network Observables"} --></p>
+<p></p>
 <p class="Network Observables" id="Network-Observables"><strong>Network Observables</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>During the installation the software resolved or contacted the following domains</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":799,"width":"528px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-89.png?w=964" alt="" class="wp-image-799" style="width:528px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="application-logs"><strong>Application Logs</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>All application logging I observed was limited to a file called level.log  in the program files directory. The log file captures connection state and evidence of remote terminal and remote control. Very little else of value was found. There are two *.db files in the folder as well, but also contained little I could determine to be useful.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="script-command-execution"><strong>Script/Command Execution</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I performed some testing of remote command execution  in the web UI. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":804,"width":"484px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-91.png?w=1024" alt="" class="wp-image-804" style="width:484px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Telemetry on the agent side revealed that the winpty-agent.exe is invoked which then spawns a child powershell process. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":806,"width":"651px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-92.png?w=1024" alt="" class="wp-image-806" style="width:651px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":812,"width":"620px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-95.png?w=1024" alt="" class="wp-image-812" style="width:620px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The Level.log file contains an indication that a terminal was connected as well.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":811,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-94.png?w=1024" alt="" class="wp-image-811"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I also created a custom script to add calc.exe to the exclusion list for Defender AV. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":842,"width":"442px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-109.png?w=1024" alt="" class="wp-image-842" style="width:442px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>After executing this on the endpoint, there was little trail to show what happened. Luckily, with PowerShell transcripts running, we have some visibility. A ps1 file is created in the Level program files directory (which was quickly disappeared), and our transcript shows the content of the ps1 script.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":848,"width":"504px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-113.png?w=1024" alt="" class="wp-image-848" style="width:504px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>If the location and filename are strong enough evidence, we can pivot on the Process ID or the ps1 filename to see if we can determine the provenance of this script.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":850,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-114.png?w=1024" alt="" class="wp-image-850"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="remote-control"><strong>Remote Control</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>A remote control session is easily established with the click of a button in the web UI. Once initiated, level.exe will spawn <em>level-remote-control-ffmpeg.exe</em> as a child process.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":814,"width":"392px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-96.png?w=1024" alt="" class="wp-image-814" style="width:392px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":815,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-97.png?w=1024" alt="" class="wp-image-815"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Corroborating evidence can be found in the level.log file by searching for the string "Capturing whole desktop".</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":822,"width":"459px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-101.png?w=1024" alt="" class="wp-image-822" style="width:459px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><em>Note, this string is also found in the level.exe memory strings.</em></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>User Interaction</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The ability to run scripts, jobs, tasks against the client device without notifying the user is well established. However, the software will popup a notification to the user when the administrator starts a remote GUI sessions. Note, it doesn't not ask the user for permission.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":817,"width":"154px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-98.png?w=326" alt="" class="wp-image-817" style="width:154px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>This information is detectable in obfuscated form in command line telemetry.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":819,"width":"604px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-99.png?w=1024" alt="" class="wp-image-819" style="width:604px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>If an investigator needed visibility into <strong>who</strong> was connecting in, they could reverse the above base64 string to get the cleartext.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":833,"width":"526px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-106.png?w=1024" alt="" class="wp-image-833" style="width:526px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:heading {"className":"FileTransfer"} --></p>
+<p></p>
 <h2 class="wp-block-heading FileTransfer" id="file-transfer"><strong>File Transfer</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Pushing a file</strong> to the client creates nothing useful in the level.log file. If sysmon is configured to record file creation events, you may observe the activity there. I pushed a file called meeting_saved_chat.txt into C:\Temp</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":826,"width":"702px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-102.png?w=1024" alt="" class="wp-image-826" style="width:702px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I also found the strings in memory for the level.exe process.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":831,"width":"471px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-105.png?w=1024" alt="" class="wp-image-831" style="width:471px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Note, this capability also works with file. You can copy a file on your admin machine and send the clipboard data to the client where it can be pasted in to explorer on the client endpoint. No evidence of this was found in level.log.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Pulling a file</strong> from the client left even less evidence. I pulled a file called Baseline.txt from the client device. I was unable to find anything in logs, but I was able to find one small breadcrumb in strings of a procdump of level.exe. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":828,"width":"479px","height":"auto","sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-103.png?w=1024" alt="" class="wp-image-828" style="width:479px;height:auto"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I tried copying and pasting a file from client to admin machine, and it failed. However, the copy paste operation in that direction worked with ASCII text. No evidence of this was found in level.log.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="iocs-and-ttps"><strong>IOCs and TTPs</strong></h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -435,12 +435,12 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:heading --></p>
+<p></p>
 <h2 class="wp-block-heading" id="foot-notes">Foot Notes</h2>
 <p><!-- /wp:heading --></p>
-<p><!-- wp:list {"ordered":true} --></p>
+<p></p>
 <ol>
-<!-- wp:list-item --></p>
+</p>
 <li>A matrix of RMM tools with links to reporting, research and detection rules is here: <a rel="noreferrer noopener" href="https://bit.ly/RMM_LOLBAS_Matrix" target="_blank">https://bit.ly/RMM_LOLBAS_Matrix</a>
 </li>
 <p><!-- /wp:list-item -->
@@ -462,7 +462,7 @@
     <div class="footer-col-wrapper">
       <div class="footer-col footer-col-1">
         <ul class="contact-list">
-          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+          <li class="p-name">Andrew Skatoff</li></ul>
       </div>
 
       <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>

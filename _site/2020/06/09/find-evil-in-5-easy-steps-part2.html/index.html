@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1"><!-- Begin Jekyll SEO tag v2.8.0 -->
+<title>Find Evil In 5 Easy Steps Part2.html | DFIR TNT Digital Forensics Incident Response Tips and Tricks</title>
+<meta name="generator" content="Jekyll v3.10.0" />
+<meta property="og:title" content="Find Evil In 5 Easy Steps Part2.html" />
+<meta name="author" content="Andrew Skatoff" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="layout: post title: Find Evil in 5 Easy Steps - Part2 date: 2020-06-09 00:40:16.000000000 -04:00 categories: [] tags: — [] &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt;" />
+<meta property="og:description" content="layout: post title: Find Evil in 5 Easy Steps - Part2 date: 2020-06-09 00:40:16.000000000 -04:00 categories: [] tags: — [] &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt;" />
+<link rel="canonical" href="https://dfirtnt.github.io/2020/06/09/find-evil-in-5-easy-steps-part2.html/" />
+<meta property="og:url" content="https://dfirtnt.github.io/2020/06/09/find-evil-in-5-easy-steps-part2.html/" />
+<meta property="og:site_name" content="DFIR TNT Digital Forensics Incident Response Tips and Tricks" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2020-06-09T00:00:00-04:00" />
+<meta name="twitter:card" content="summary" />
+<meta property="twitter:title" content="Find Evil In 5 Easy Steps Part2.html" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Andrew Skatoff"},"dateModified":"2020-06-09T00:00:00-04:00","datePublished":"2020-06-09T00:00:00-04:00","description":"layout: post title: Find Evil in 5 Easy Steps - Part2 date: 2020-06-09 00:40:16.000000000 -04:00 categories: [] tags: — [] &lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot;&gt;","headline":"Find Evil In 5 Easy Steps Part2.html","mainEntityOfPage":{"@type":"WebPage","@id":"https://dfirtnt.github.io/2020/06/09/find-evil-in-5-easy-steps-part2.html/"},"url":"https://dfirtnt.github.io/2020/06/09/find-evil-in-5-easy-steps-part2.html/"}</script>
+<!-- End Jekyll SEO tag -->
+<link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://dfirtnt.github.io/feed.xml" title="DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks" /></head>
+<body><header class="site-header" role="banner">
+
+  <div class="wrapper"><a class="site-title" rel="author" href="/">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</a><nav class="site-nav">
+        <input type="checkbox" id="nav-trigger" class="nav-trigger" />
+        <label for="nav-trigger">
+          <span class="menu-icon">
+            <svg viewBox="0 0 18 15" width="18px" height="15px">
+              <path d="M18,1.484c0,0.82-0.665,1.484-1.484,1.484H1.484C0.665,2.969,0,2.304,0,1.484l0,0C0,0.665,0.665,0,1.484,0 h15.032C17.335,0,18,0.665,18,1.484L18,1.484z M18,7.516C18,8.335,17.335,9,16.516,9H1.484C0.665,9,0,8.335,0,7.516l0,0 c0-0.82,0.665-1.484,1.484-1.484h15.032C17.335,6.031,18,6.696,18,7.516L18,7.516z M18,13.516C18,14.335,17.335,15,16.516,15H1.484 C0.665,15,0,14.335,0,13.516l0,0c0-0.82,0.665-1.483,1.484-1.483h15.032C17.335,12.031,18,12.695,18,13.516L18,13.516z"/>
+            </svg>
+          </span>
+        </label>
+
+        <div class="trigger"></div>
+      </nav></div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+  <header class="post-header">
+    <h1 class="post-title p-name" itemprop="name headline">Find Evil In 5 Easy Steps Part2.html</h1>
+    <p class="post-meta">
+      <time class="dt-published" datetime="2020-06-09T00:00:00-04:00" itemprop="datePublished">Jun 9, 2020
+      </time></p>
+  </header>
+
+  <div class="post-content e-content" itemprop="articleBody">
+    ---
+layout: post
+title: Find Evil in 5 Easy Steps - Part2
+date: 2020-06-09 00:40:16.000000000 -04:00
+categories: []
+tags:
+--- []
+<p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
+
+<p>In Part 1 we talked about Loki, Logparser and DeepBlueCLI for analyzing offline forensic artifacts in an effort to get the low hanging fruit left behind by most threat actors. Part 2 will focus on KAPE and Windows Registry analysis.</p>
+<h3>4. Parse all the things with KAPE!</h3>
+<p><a href="https://www.kroll.com/en/services/cyber-risk/investigate-and-respond/kroll-artifact-parser-extractor-kape" target="_blank" rel="noopener">KAPE</a> is a free tool which helps DFIR analysts to collect evidence from live endpoints and analyze them. Fortunately, these two functions are independent and you can use KAPE for offline analysis of artifacts collected from any forensically sound tool. As we did in Part1, we are going to assume you have a collection of evidence from a victim endpoint which contains file system artifacts (e.g. MFT, EventLogs, Registry Files, etc). KAPE provides a command line version and GUI version which helps new users learn the syntax!</p>
+<p>We will start by launching gKAPE.exe (the GUI version) and telling it we don't want to collect new data (target options - left) but we only want to use the analysis mode (module options - right).</p>
+<p></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/capture.png?w=1024" alt="" class="wp-image-181"></figure>
+<p><!-- /wp:image --></p>
+<p></p>
+<p>For "Module source" provide a path to your forensic collection (e.g. C:\temp\cases\inc1234\files\C)</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>For "Module destination" provide a path to the location where you would like the output files to be written (e.g. C:\temp\cases\inc123).  </p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>Next we will select several modules for parsing the registry, prefetch, amcache, etc. You can quickly filter the 100+ modules to find the items that may interest you. One quick way to focus on things usable on offline collections is to filter out any items from the Folder and Category "Live Response." To access the advance filtering menu, click on the "ABC" icon in the top row. Select "Does not contain" and then type "live". Repeat for both columns.</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/untitled-1.png?w=814" alt="" class="wp-image-186"></figure>
+<p><!-- /wp:image --></p>
+<p></p>
+<p>While browsing through the <a rel="noreferrer noopener" href="https://ericzimmerman.github.io/KapeDocs/#!Pages\2.2-Modules.md" target="_blank">available modules</a> double clicking on any of them will open a new dialogue which explains the details of what the module will do. The author or KAPE (Eric Zimmerman) helpfully put all his awesome parsers in one place (although some of them are duplicated in other modules). For today's purposes, we are will select his modules in bulk by checking the box next to "!EZParser"</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>At this point, we are ready to kick off the simplest job for parsing tons of important data. The GUI helpfully provides the cmd equivalent at the bottom of the dialogue box. So you can copy/paste that into CMD or simply click "Execute" </p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image.png?w=1024" alt="" class="wp-image-187"></figure>
+<p><!-- /wp:image --></p>
+<p></p>
+<figure class="wp-block-table">
+<table>
+<tbody>
+<tr>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-3.png?w=161" alt="This image has an empty alt attribute; its file name is image-3.png"></td>
+<td><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-2.png?w=143" alt="This image has an empty alt attribute; its file name is image-2.png"></td>
+</tr>
+</tbody>
+</table>
+</figure>
+<p><!-- /wp:table --></p>
+<p></p>
+<p>This will launch each of the following Eric Zimmerman parsers against your entire collection and create CSV formatted output for each of them by category. The parsers are as follows:</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<ul>
+<li>AmcacheParser</li>
+<li>AppCompatCacheParser</li>
+<li>EvtxECmd</li>
+<li>JLECmd</li>
+<li>LECmd</li>
+<li>PECmd</li>
+<li>RBCmd</li>
+<li>SBECmd</li>
+<li>RecentFileCacheParser</li>
+<li>RECmd</li>
+<li>WxTCmd</li>
+<li>MFTECmd</li>
+</ul>
+<p><!-- /wp:list --></p>
+<p></p>
+<p>KAPE will created a folder structure within the destination directory you specified above by category. Like so:</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>C:\temp\cases\inc123\Registry<br>C:\temp\cases\inc123\FileDeletion<br>C:\temp\cases\inc123\FileSystem<br>.... etc.</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>KAPE provides a ton more options and is extensible for your own tools/code. I will cover more on that in a future post. For now, let's pause here. Now that we have extracted tons of human friendly data from our collection, let's set it aside for later use. </p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<h3>5. Registry Searching Cheats</h3>
+<p><!-- /wp:heading --></p>
+<p></p>
+<p>The buzz word "fileless malware" has gained traction in the last 5 years as threat actors have begun to rely more heavily on "living of the land" and minimizing their footprint on disk. In addition to using native OS commands many threat actors are using the registry for code configuration, credentials, persistence, and even to store shellcode.</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>With a few quick <a href="https://f001.backblazeb2.com/file/EricZimmermanTools/RegistryExplorer_RECmd.zip" target="_blank" rel="noreferrer noopener">RECmd </a>queries we can cover several of these techniques. RECmd is Eric Zimmerman's standalone command line tool for forensic registry analysis. It is closely tied to <a href="https://f001.backblazeb2.com/file/EricZimmermanTools/RegistryExplorer_RECmd.zip" target="_blank" rel="noreferrer noopener">Registry Explorer</a> which a grahpical interface to allow deeper analysis. </p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p> Since you know how to read help menus, I'll spare you the background, if you promise to launch RECmd.exe /? and read the instructions. Since this is a "Tips and Tricks" blog, I'll cut straight to the sweet sweet commands:</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<pre class="wp-block-code"><code>#Query HKCU for records of exes in suspicious locations:
+
+RECmd.exe --f  "C:\Temp\Cases\inc123\files\C\users\user1\NTUSER.DAT" --regex --sv "(\\programdata\\.+\.exe|\\temp\\.+\.exe|\\users\\.+\.exe)"</code></pre>
+<p><!-- /wp:code --></p>
+<p></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-4.png?w=1024" alt="" class="wp-image-194"></figure>
+<p><!-- /wp:image --></p>
+<p></p>
+<p>This works nicely for a single hive (using the --f option). However, RECmd also let's us run the same query against our WHOLE collection and it finds all relevant hives and parses them! Let's also add some additional file extensions which are often suspcisious!</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<pre class="wp-block-code"><code>#Query entire collection for registry records of exes in suspicious locations.
+# adjust the list of extensions to suite your need. some of them can be very noisy.
+
+RECmd.exe --d  "C:\Temp\Cases\inc123\files\C" --regex --sa "(\\programdata\\.+\.|\\temp\\.+\.|\\users\\.+\.)(exe|bat|lnk|ps1|cmd|com|vbs|js|jse|wsh|mht|htm|hta|vba|vbe|scr|cpl|msc|jar|vb|reg)"
+</code></pre>
+<p><!-- /wp:code --></p>
+<p></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-7.png?w=1024" alt="" class="wp-image-198"></figure>
+<p><!-- /wp:image --></p>
+<p></p>
+<p>Finally, we want to search all our registry artifacts for encoded and/or oversized data values. These could be an indication that shell code has been placed in the registry. RECmd can make quick work of this with the following queries:</p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<pre class="wp-block-code"><code>#Find base64 encoded data values in all registry artifacts with size &gt; 10KB
+RECmd.exe --d  "C:\Temp\Cases\inc123\files\C"  --Base64 10000
+
+#Find any data values in all registry artifacts with size &gt; 100KB
+RECmd.exe --d  "C:\Temp\Cases\inc123\files\C"  --MinSize 100000</code></pre>
+<p><!-- /wp:code --></p>
+<p></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-10.png?w=1024" alt="" class="wp-image-202"></figure>
+<p><!-- /wp:image --></p>
+<p></p>
+<figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2020/06/image-8.png?w=747" alt="" class="wp-image-200"></figure>
+<p><!-- /wp:image --></p>
+<p></p>
+<p>If any suspicious items are detected, you can use the CSV files you created earlier and/or Registry Explorer to examine them further. </p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>With these 5 steps you can triage most security incidents where you have been provided an offline collection of evidence for a modern windows system. Most attackers are loud and leave a large footprint. These steps will help you find those footprints more quickly and determine if additional investigation is needed. <br></p>
+<p><!-- /wp:paragraph --></p>
+<p></p>
+<p>What are some things I should have included? Leave comments with your thoughts or your approach to triaging security incidents.</p>
+<p><!-- /wp:paragraph --><br />
+</body></html></p>
+
+  </div><a class="u-url" href="/2020/06/09/find-evil-in-5-easy-steps-part2.html/" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="site-footer h-card">
+  <data class="u-url" href="/"></data>
+
+  <div class="wrapper">
+
+    <h2 class="footer-heading">DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks</h2>
+
+    <div class="footer-col-wrapper">
+      <div class="footer-col footer-col-1">
+        <ul class="contact-list">
+          <li class="p-name">Andrew Skatoff</li></ul>
+      </div>
+
+      <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
+</div>
+
+      <div class="footer-col footer-col-3">
+        <p>Digital Forensics | Incident Response | Tips and Tricks</p>
+      </div>
+    </div>
+
+  </div>
+
+</footer>
+</body>
+
+</html>

@@ -50,23 +50,23 @@
   <div class="post-content e-content" itemprop="articleBody">
     - Detection
 <p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
-<!-- wp:paragraph --><html><body></p>
+<html><body></p>
 <p>The business model for Ransomware has evolved to include multi-level and multi-stage services and tool kits. Initial access is often accomplished by 1st stage compromise, followed by 2nd stage download/drop of tools like Emotet, Trickbot, and Qakbot. This 2nd stage allows adversaries to lurk in your network, profiling normal use and/or searching for targets of maximum impact. At this point the attack often looks like any other infiltration. However, several techniques are often observed just prior to ransomware execution. In this post I'll provide examples of these detectable behaviors which you can use to build SIEM alerts, custom EDR prevention/response rules, and threat hunting logic. Detecting these patterns (in near real time) will give you an advantage in understanding what kind of threat you are facing and which devices have been impacted when the inevitable emergency phone calls start coming in.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><span style="text-decoration:underline;">Caveat 1:</span> Alerting on this activity is a LAST line of defense. Truthfully, if you catch a real bad guy with these, you're likely going to have a terrible couple of weeks. If you don't already have a robust set of other detection rules for the 1st and 2nd stages, PLEASE don't start here. This is the last chance to alert and will most likely be only of forensic value, since these often occur minutes before ransomware is deployed. If you're lucky, you'll have a chance to identify and isolate the impacted devices before the attack spreads further.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><span style="text-decoration:underline;">Caveat 2</span>: The commands below assume two things: <br>1. you are monitoring process execution and associated command lines, <br>2. the commands are in plain text and not encoded via PowerShell or otherwise obscured (e.g. passed via API). If they are, and you have a robust EDR Solution, or script block logging enabled, you may still be able to see the decoded/hidden commands. Note, some of these techniques are detectable via other means (e.g. registry monitoring) and where that is the case I've mentioned it in the "notes" column below. Always test your rules with adversary emulation techniques!</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><br><strong>Goal 1: Profile and Disable Protections</strong><br>These actions aim to evade/disable prevention/detection tools. This could be disabling AntiVirus processes or making changes to system settings.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:columns {"verticalAlignment":"center","align":"full"} --></p>
+<p></p>
 <div class="wp-block-columns alignfull are-vertically-aligned-center">
-<!-- wp:column {"verticalAlignment":"center","width":"100%"} --></p>
+</p>
 <div class="wp-block-column is-vertically-aligned-center" style="flex-basis:100%;">
-<!-- wp:table {"hasFixedLayout":true,"align":"full","className":"is-style-stripes"} --></p>
+</p>
 <figure class="wp-block-table alignfull is-style-stripes">
 <table class="has-fixed-layout">
 <tbody>
@@ -157,10 +157,10 @@
 <p><!-- /wp:column -->
 </div>
 <p><!-- /wp:columns --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Goal 2: Impair Recovery</strong><br>These actions aim to limit the victim's options for stopping the malware and recovering from the loss of data. ATT&amp;CK: <a href="https://attack.mitre.org/techniques/T1490/" target="_blank" rel="noreferrer noopener">Inhibit System Recovery (T1490)</a>.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table {"hasFixedLayout":true,"align":"full","className":"is-style-stripes"} --></p>
+<p></p>
 <figure class="wp-block-table alignfull is-style-stripes">
 <table class="has-fixed-layout">
 <tbody>
@@ -235,10 +235,10 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Goal 3: Unlock files in use</strong><br>These actions aim to ensure the most damage by allowing the ransomware to encrypt even files which may be in use. Killing tasks which have files locked open is key to ensuring they are editable by the ransomware.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table {"hasFixedLayout":true,"align":"full","className":"is-style-stripes"} --></p>
+<p></p>
 <figure class="wp-block-table alignfull is-style-stripes">
 <table class="has-fixed-layout">
 <tbody>
@@ -280,10 +280,10 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Goal: Destroy/Ransom Data</strong><br>This is the final stage where files are encrypted, often renamed and a ransom note is presented or dropped on the filesystem. The detection value of alerting at this stage is limited, since we are going to hope and believe that our users are going to call the emergency hotline at this point and, God forbid, not attempt to pay the attackers.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Conclusion</strong><br>I hope this will help you in your fight against ransomware. Drop me a comment and let me know what other detection logic you have have found helpful.</p>
 <p><!-- /wp:paragraph --><br />
 </body></html></p>
@@ -302,7 +302,7 @@
     <div class="footer-col-wrapper">
       <div class="footer-col footer-col-1">
         <ul class="contact-list">
-          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+          <li class="p-name">Andrew Skatoff</li></ul>
       </div>
 
       <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>

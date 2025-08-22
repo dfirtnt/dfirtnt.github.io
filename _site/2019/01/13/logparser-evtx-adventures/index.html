@@ -69,56 +69,56 @@
 <p>Since LogParser seems to think in T-SQL, it is a great command line option for some simple data stacking (aka frequency analysis and anomaly detection). I created a set of queries which stack things like users, processes, services, scheduled tasks, domains, remote machines. I found a great resource with many examples of these commands at this github <a href="https://gist.github.com/exp0se/1bae653b790cf5571d20">page</a> and borrowed a lot of it making small tweaks here and there.  </p>
 <p>Since "pipes" don't work, I had to figure out how to export/append the results to a single file for quick review by an analyst. Adding "INTO exportfile.txt" before "FROM" in the SQL gets the export done, but the append operation also requires " -filemode:0" at the end of each query. I chose to name my export file "WELDS.txt" as a corny acronym for "Windows Event Log Data Summaries."</p>
 <p>These queries dump numerous histogram-like count summaries of interesting data elements. It may be helpful to search at the lower end of the frequency table to fin things which are relatively rare.</p>
-<p><!-- wp:image {"id":98,"align":"center","width":261,"height":135} --></p>
+<p></p>
 <div class="wp-block-image">
 <figure class="aligncenter is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2019/01/capture.png" alt="" class="wp-image-98" width="261" height="135"></figure>
 </div>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>My favorite part of this script is the summary of process execution events where I have paired the parent process with the child process. Typically, Proc2 is the parent and Proc1 is the child.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph {"fontSize":"small"} --></p>
+<p></p>
 <p class="has-small-font-size">LogParser.exe -stats:OFF -i:EVT "SELECT COUNT(*) AS CNT, EXTRACT_TOKEN(Strings, 5, '|') AS Proc1, extract_token(strings, 13, '|') as Proc2 INTO WELDS.txt FROM '.\files\c\windows\system32\winevt\logs\Security.evtx' WHERE EventID = 4688 AND (Proc1 LIKE '%.%' AND Proc2 LIKE '%.%') GROUP BY Proc1, Proc2 ORDER BY CNT ASC"</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The results are found near the end of the WELDS.txt file. In the absence of EDR or a memory capture, this can be very helpful in determining strange processes relationships (e.g. we would not want to see cmd.exe starting iexplore.exe).</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":100,"align":"center","width":768,"height":65} --></p>
+<p></p>
 <div class="wp-block-image">
 <figure class="aligncenter is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2019/01/capture3.png?w=1024" alt="" class="wp-image-100" width="768" height="65"></figure>
 </div>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Goal 3. Know Normal, Find Evil</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>While there are seemingly endless ways to "find evil" SANS has provided us with a "greatest hits" of suspicious event IDs to pay close attention to in the form of the <a href="https://digital-forensics.sans.org/media/SANS_Poster_2018_Hunt_Evil_FINAL.pdf">2018 "Know Normal - Find Evil" poster</a>. This is a quick reference for event logs, registry entries, and prefetch artifacts which incident responders can use to focus their first review of a suspect endpoint.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The Japanese CERT has also provided a wonderful <a href="https://www.jpcert.or.jp/english/pub/sr/20170612ac-ir_research_en.pdf">paper</a> on detecting lateral movement with similar artifacts.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><a href="https://github.com/dfirtnt/LP_KNFE">The third batch file</a> seeks to capture each of these pearls of wisdom in a "push-button" friendly way to cull the massive number of events in the evtx files down to only those which are highlighted in these two documents as likely to reveal suspicious activity. I made an attempt to ECHO helpful comments about what each query is doing. This script output is very verbose and most likely needs additional tuning to make it worth while. However, it's a handy quick reference you can copy/paste from to target specific EventIDs of interest when responding to a suspected compromise. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><a href="https://github.com/dfirtnt/LP_ReconProc">My final batch file</a> was inspired by the <a href="https://www.youtube.com/watch?v=-0bYcD3_bBs">SANS DFIR Summit presentation</a> on <a href="https://github.com/mbevilacqua/appcompatprocessor">AppCompatProcessor</a>. Among many other promising things (e.g. advance statistical anomaly detection), this tool uses a list of "recon" strings to identify clusters of commands which are more likely to be indicative of an adversary performing recon on the machine or network in search of additional opportunities. Commands such as net.exe, whoami.exe, ping.exe, etc are collected and displayed in timeline format.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":103,"width":543,"height":189} --></p>
+<p></p>
 <figure class="wp-block-image is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2019/01/capture4.png" alt="" class="wp-image-103" width="543" height="189"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>That's all for now. Hopefully, this shows you the power of LogParser and gives some ideas on how it can be used to quickly triage evidence in incident response.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><em>P.S. this is a small taste of the kind of information I'll be teaching at the SANS FOR508 Class starting in Richmond, VA on March 6th. Details here: </em><a rel="noreferrer noopener" target="_blank" href="https://www.linkedin.com/feed/update/urn:li:activity:6483781362825392128/"><em>https://www.linkedin.com/feed/update/urn:li:activity:6483781362825392128/</em></a></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><!-- /wp:paragraph --><br />
 </body></html></p>
 
@@ -136,7 +136,7 @@
     <div class="footer-col-wrapper">
       <div class="footer-col footer-col-1">
         <ul class="contact-list">
-          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+          <li class="p-name">Andrew Skatoff</li></ul>
       </div>
 
       <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>

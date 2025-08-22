@@ -51,16 +51,16 @@
     - LOL_M&amp;Ms
 - RMM
 <p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"><br />
-<!-- wp:paragraph --><html><body></p>
+<html><body></p>
 <p>As we continue our series on Remote Monitoring and Management (RMM) tools, this time we turn our eyes to Xeox! Although I found no public reporting on this tool being used by threat actors, a colleague worked on a recent incident where this was the RMM tool of choice for the adversary (a criminal TA referred to as Scattered Kitten). With that in mind, let's look at what this tool is, what its capabilities are, and let's figure out what detection opportunities there may be and what forensic artifacts it leaves behind. Click <a href="#ioc-ttps"><strong>here</strong></a> if you want to skip straight to the TTP/IOC section.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Capabilities</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Their web page lists numerous remote management capabilities. It doesn't offer direct remote control capabilities, but it offers the ability to install several other remote desktop tools, and the Xeox user can use the web UI to start these tools (although, as you can see below, their capabilities are in "beta").</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -72,38 +72,38 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The software is published by "<strong>hs2n Informationstechnologie GmbH</strong>". "GmbH" stands for "Gesellschaft mit beschränkter Haftung," which is a German term for a "company with limited liability" in English. It is a legal structure used predominantly in Germany and Austria, as well as some other German-speaking countries. This particular company appears to be Austrian, as their address is in Austria and the IP addresses of their servers are also located in Austria.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>There is no software for the administrator and all admin tasks are performed through the web interface.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Testing Details</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Testing was done with Xeox version 2.0.0.47 with the “victim” device being Windows10 v1709 (OS Build 16299.309). Telemetry used was</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
+<p></p>
 <ul>
-<!-- wp:list-item --></p>
+</p>
 <li>Sysmon (with the Swift-on-Security config),</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>PowerShell script block logging and transcripts were enabled.</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>Noriben was used to automate Procmon output.</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>Manual process analysis performed with ProcessHacker.</li>
 <p><!-- /wp:list-item -->
 </ul>
 <p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Client Installer</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table {"align":"left"} --></p>
+<p></p>
 <figure class="wp-block-table alignleft">
 <table>
 <tbody>
@@ -115,34 +115,34 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:image {"align":"right","id":527,"width":570,"height":69,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image alignright size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-18.png?w=1024" alt="" class="wp-image-527" style="width:570px;height:69px" width="570" height="69"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph {"align":"left"} --></p>
+<p></p>
 <p class="has-text-align-left">Testing the "Install with PowerShell.exe" option creates a 4104 event in the powershell operational log and records the URL.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"right","id":557,"width":300,"height":231,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image alignright size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image.png?w=842" alt="" class="wp-image-557" style="width:300px;height:231px" width="300" height="231"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I chose to download the installer manually and run through the MSI wizard. I selected all components: </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The "Testing Internet Connection" option appears to launch the following during the final minutes of the installation:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"center","id":562,"width":767,"height":225,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-2.png?w=1024" alt="" class="wp-image-562" style="width:767px;height:225px" width="767" height="225"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>xeox-agent_x64.exe is now running as a Service (with System privileges) and a version file appears in C:\Program Files (x86)\XEOX\Version.txt.   In this case, the version is 2.0.0.47.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Once installed, the agent is relatively silent, at least from a user perspective. There are no popups reminding the user this is running, and there is no icon in the systray area. But as we know, RMM tools "can hide, but they must run."</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>During the install, xeox drops numerous  *.pyd files (indicative of compiled python code) and several portable executables. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -154,13 +154,13 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Persistence</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Xeox established persistence via a Service which is setup to run automatically with System-level privileges. It also sets up a scheduled task to run every 6 hours to ensure the exe is up and running.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -173,10 +173,10 @@
 <figcaption class="wp-element-caption">Persistence</figcaption>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Log Files</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table {"align":"left"} --></p>
+<p></p>
 <figure class="wp-block-table alignleft">
 <table>
 <tbody>
@@ -188,10 +188,10 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Network</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -211,13 +211,13 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Dynamic Filesystem Folder</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The software regularly reviews current windows updates leveraging the <a href="https://wuinstall.com/">wuinstall</a> software (made by the same company).  Ephemeral files such as *.ini and logs are created in a randomly named folder within the application directory. For example: C:\PROGRAM FILES\XEOX\<mark style="background-color:rgba(0, 0, 0, 0)" class="has-inline-color has-bright-blue-color"><strong>WORK</strong></mark>\22943007\WUINSTALL_1689365938.LOG. The "22943007" folder will later be deleted and replaced as new jobs are introduced.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -229,7 +229,7 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -241,19 +241,19 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Similar enumeration scripts are run to collect software, services, and more. This information appears  back in the web UI console as follows:</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":548,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/07/image-28.png?w=1024" alt="" class="wp-image-548"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>File/Data Exfiltration</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Xeox provides a "Job Editor" that allows numerous actions to be taken against client devices.  I tested several of them. Let's start with transferring a file from the client to the server. The web UI provides a somewhat intuitive drag and drop builder. I created a test file call exfil.txt</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -265,22 +265,22 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The only indication I could find of this activity was from within Xeox the *.log files.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"center","id":580,"width":643,"height":279,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-11.png?w=1024" alt="" class="wp-image-580" style="width:643px;height:279px" width="643" height="279"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>We can see in the web UI that the file has been successfully exfiltrated. Clicking on the below hotlink begins a download of the file through the browser.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"center","id":583,"width":394,"height":193,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-12.png?w=1024" alt="" class="wp-image-583" style="width:394px;height:193px" width="394" height="193"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Arbitrary Script Execution</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -292,37 +292,37 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>I noticed in the Noriben output that the xeox-agent_x64 launched a child version of itself, which then launched powershell.exe. As you can see, it has packaged the script as a randomly named *.ps1 file, the contents of which would be visible in Script Block log events and powershell transcripts. </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":589,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-14.png?w=1024" alt="" class="wp-image-589"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>As we might expect, the *.log files are also very verbose in tracking this activity.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"align":"center","id":591,"width":328,"height":169,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image aligncenter size-large is-resized"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-15.png?w=1024" alt="" class="wp-image-591" style="width:328px;height:169px" width="328" height="169"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Arbitrary LOLBAS code execution</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>The next test was to run a command with a built-in ("Living of the Land") executable. For this test I used <a rel="noreferrer noopener" href="https://atomicredteam.io/defense-evasion/T1218/" target="_blank">rundll32.exe command</a> lovingly stolen from the <a href="https://twitter.com/redcanary" target="_blank" rel="noreferrer noopener">Red Canary's</a> Atomic Red Team test set. The web UI job builder ran with the following parameters:<br></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":593,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-16.png?w=1024" alt="" class="wp-image-593"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>This worked beautifully and created Sysmon and *.log event artifacts.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:image {"id":600,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-21.png?w=1024" alt="" class="wp-image-600"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:image {"id":599,"sizeSlug":"large","linkDestination":"none"} --></p>
+<p></p>
 <figure class="wp-block-image size-large"><img src="https://dfirtnt.wordpress.com/wp-content/uploads/2023/08/image-20.png?w=1024" alt="" class="wp-image-599"></figure>
 <p><!-- /wp:image --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -334,38 +334,38 @@
 </table>
 </figure>
 <p><!-- /wp:table --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p><strong>Additional Capabilities</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>There are many more capabilities offered in the web UI, such as: </p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:list --></p>
+<p></p>
 <ul>
-<!-- wp:list-item --></p>
+</p>
 <li>download a file via aria2c.exe</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>delete shadow copies</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>clear event logs</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>send a windows message</li>
 <p><!-- /wp:list-item --></p>
-<p><!-- wp:list-item --></p>
+<p></p>
 <li>installing software via Chocolatey</li>
 <p><!-- /wp:list-item -->
 </ul>
 <p><!-- /wp:list --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p>Based on this initial testing, there seems to be a high likelihood  that these actions would also appear in the *.log files, Sysmon (or other commandline logging events) and security logs.</p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
+<p></p>
 <p id="ioc-ttps"><strong>A Summary of Indicators / TTPs</strong></p>
 <p><!-- /wp:paragraph --></p>
-<p><!-- wp:table --></p>
+<p></p>
 <figure class="wp-block-table">
 <table>
 <tbody>
@@ -419,7 +419,7 @@
     <div class="footer-col-wrapper">
       <div class="footer-col footer-col-1">
         <ul class="contact-list">
-          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+          <li class="p-name">Andrew Skatoff</li></ul>
       </div>
 
       <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>

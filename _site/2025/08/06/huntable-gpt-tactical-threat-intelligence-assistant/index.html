@@ -8,8 +8,8 @@
 <meta property="og:title" content="Huntable - AI Assistant for Tactical Threat Intel" />
 <meta name="author" content="Andrew Skatoff" />
 <meta property="og:locale" content="en_US" />
-<meta name="description" content="&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot; &gt;" />
-<meta property="og:description" content="&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot; &gt;" />
+<meta name="description" content="Turning Intel Into Action: My Tactical Threat Intelligence Assistant" />
+<meta property="og:description" content="Turning Intel Into Action: My Tactical Threat Intelligence Assistant" />
 <link rel="canonical" href="https://dfirtnt.github.io/2025/08/06/huntable-gpt-tactical-threat-intelligence-assistant/" />
 <meta property="og:url" content="https://dfirtnt.github.io/2025/08/06/huntable-gpt-tactical-threat-intelligence-assistant/" />
 <meta property="og:site_name" content="DFIR TNT Digital Forensics Incident Response Tips and Tricks" />
@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary" />
 <meta property="twitter:title" content="Huntable - AI Assistant for Tactical Threat Intel" />
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Andrew Skatoff"},"dateModified":"2025-08-06T11:26:59-04:00","datePublished":"2025-08-06T11:26:59-04:00","description":"&lt;!DOCTYPE html PUBLIC &quot;-//W3C//DTD HTML 4.0 Transitional//EN&quot; &quot;http://www.w3.org/TR/REC-html40/loose.dtd&quot; &gt;","headline":"Huntable - AI Assistant for Tactical Threat Intel","mainEntityOfPage":{"@type":"WebPage","@id":"https://dfirtnt.github.io/2025/08/06/huntable-gpt-tactical-threat-intelligence-assistant/"},"url":"https://dfirtnt.github.io/2025/08/06/huntable-gpt-tactical-threat-intelligence-assistant/"}</script>
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Andrew Skatoff"},"dateModified":"2025-08-06T11:26:59-04:00","datePublished":"2025-08-06T11:26:59-04:00","description":"Turning Intel Into Action: My Tactical Threat Intelligence Assistant","headline":"Huntable - AI Assistant for Tactical Threat Intel","mainEntityOfPage":{"@type":"WebPage","@id":"https://dfirtnt.github.io/2025/08/06/huntable-gpt-tactical-threat-intelligence-assistant/"},"url":"https://dfirtnt.github.io/2025/08/06/huntable-gpt-tactical-threat-intelligence-assistant/"}</script>
 <!-- End Jekyll SEO tag -->
 <link rel="stylesheet" href="/assets/main.css"><link type="application/atom+xml" rel="alternate" href="https://dfirtnt.github.io/feed.xml" title="DFIR TNT | Digital Forensics | Incident Response | Tips and Tricks" /></head>
 <body><header class="site-header" role="banner">
@@ -48,17 +48,83 @@
   </header>
 
   <div class="post-content e-content" itemprop="articleBody">
-    <p><!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd"
-><br />
+    ## Turning Intel Into Action: My Tactical Threat Intelligence Assistant
 
-<!-- wp:heading --><html><body></p>
-<h2 class="wp-block-heading">Turning Intel Into Action: My Tactical Threat Intelligence Assistant</h2>
-<p><!-- /wp:heading --></p>
-<p><!-- wp:paragraph --></p>
-<p>Threat reports are everywhere—but most don't help you hunt. Fancy graphics and vague analysis rarely translate into detection logic. You end up scrolling 20 pages, searching for gritty details: command lines, DNS patterns, parent-child process chains.</p>
-<p><!-- /wp:paragraph --></p>
-<p><!-- wp:paragraph --></p>
-<p>That's why I built <a href="https://chatgpt.com/g/g-67dc5ef37aec8191a254c4802ee110b0-huntable-tactical-threat-intelligence-assistant"><strong>Huntable GPT</strong></a>—a small, purpose-built AI assistant that reads threat reports like a practitioner and pulls out what blue-team defenders actually care about.</p>
+Threat reports are everywhere—but most don't help you hunt. Fancy graphics and vague analysis rarely translate into detection logic. You end up scrolling 20 pages, searching for gritty details: command lines, DNS patterns, parent-child process chains.
+
+That's why I built **Huntable GPT**—a small, purpose-built AI assistant that reads threat reports like a practitioner and pulls out what blue-team defenders actually care about.
+
+### What It Does
+
+This isn't a chatty AI. It's not summarizing or over explaining. It's trained to extract technical details that defenders can act on. Everything is filtered through a telemetry-first lens: can we detect this in logs?
+
+* Command-line patterns with full parameters
+* Process trees (parent/child relationships)
+* Suspicious DNS lookups and DGA patterns
+* Proxy log indicators (User-Agents, URL patterns)
+* Windows Event IDs and Syslog patterns tied to TTPs
+
+When there's enough context, it even builds tailored SIGMA rules—specific to the threat report, not generic templates.
+
+## Key Capabilities
+
+**Prioritized Intelligence Sources** The assistant focuses on high-quality, technical sources known for detailed analysis – think DFIR Report, Unit42, Mandiant, and CrowdStrike. It knows which sources typically provide the technical depth needed for effective hunting.
+
+**Telemetry-First Approach** Every response includes observables from priority data sources:
+
+* Command-line patterns with exact parameters
+* Process execution chains showing parent-child relationships
+* DNS queries including DGA patterns and suspicious domains
+* Proxy log indicators like specific user-agents and URL patterns
+* Windows Event Log correlations with specific Event IDs
+* Syslog-based detection opportunities
+
+**SIGMA Rule Generation** When the intelligence supports it, the assistant can generate properly formatted SIGMA rules based on the extracted observables. These aren't generic rules – they're tailored to the specific TTPs found in current threat intelligence.
+
+**Recent Intelligence Focus** The tool prioritizes intelligence from the past 6-12 months, with the ability to search for the most current threat activity. It's designed to keep pace with the rapidly evolving threat landscape.
+
+## Real-World Applications
+
+Here's how we can use the assistant in practice:
+
+**Threat Hunting Preparation** Instead of manually parsing through lengthy APT reports, I can quickly extract the huntable artifacts and get straight to building queries for my threat hunting platform.
+
+**Detection Rule Development** The assistant helps bridge the gap between reading about a technique and actually implementing detection logic. It extracts the specific technical details needed to write effective rules with low false positive rates.
+
+**Intelligence Triage** When multiple threat reports come out about the same campaign, the assistant helps me quickly identify which reports contain the most actionable technical details worth investigating further.
+
+**Hunt Hypothesis Generation** By focusing on telemetry-visible behaviors, the tool helps generate specific hunt hypotheses rather than vague "look for suspicious activity" guidance.
+
+### Getting the Most Out of It
+
+Ask clear, scoped questions like:
+
+* `What's APT29 been doing in cmd.exe the last 6 months?`
+* `Got DNS TTPs for current ransomware campaigns?`
+* `What proxy indicators are showing up in recent C2 traffic?`
+* `Build SIGMA for suspicious Event IDs tied to credential access`
+
+The more focused you are, the better it delivers.
+
+If it gives stale intel, just say so—it often corrects when prompted. Try multiple prompts. Refine. It responds well to iteration.
+
+Here are some prompts that seem to work well! Give them a try and edit to suit your needs!
+
+| **Use Case**                                                                     | **Example / Illustration**                                       |
+| -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Ask it to focus on a particular telemetry source and/or technique.               | [ChatGPT Share Link](https://chatgpt.com/share/68938488-2034-8002-9e11-db88464cdbf0) |
+| Ask it to focus on a particular platform (e.g. MacOS)                            | [ChatGPT Share Link](https://chatgpt.com/share/689383ec-75cc-8002-9e5c-590d2d543a81) |
+| Ask it to assess if the SIGMA rules it provided are good or not (e.g. FP prone). | [ChatGPT Share Link](https://chatgpt.com/share/68938393-9384-8002-91ce-ba3d1d3edbe6) |
+| Ask it about some novel thing you vaguely remember hearing about.                | [ChatGPT Share Link](https://chatgpt.com/share/68938264-e738-8002-91ce-ba3d1d3edbe6) |
+| Try multiple shots. Ask for what you want then ask it to convert to SIGMA.       | [ChatGPT Share Link](https://chatgpt.com/share/6893816a-e358-8002-aec8-757f1f52618b) |
+
+### Final Word
+
+This tool doesn't replace analysis—but hopefully, it speeds it up. Less time reading reports, more time finding evil!
+
+---
+
+_Have you tried building specialized AI assistants for your security workflows? I'd love to hear about your experiences and lessons learned. Feel free to reach out if you have questions about implementing tactical intelligence automation in your environment._
 
   </div><a class="u-url" href="/2025/08/06/huntable-gpt-tactical-threat-intelligence-assistant/" hidden></a>
 </article>
@@ -74,7 +140,7 @@
     <div class="footer-col-wrapper">
       <div class="footer-col footer-col-1">
         <ul class="contact-list">
-          <li class="p-name">{&quot;name&quot;=&gt;&quot;Andrew Skatoff&quot;, &quot;bio&quot;=&gt;&quot;Digital Forensics and Incident Response&quot;}</li></ul>
+          <li class="p-name">Andrew Skatoff</li></ul>
       </div>
 
       <div class="footer-col footer-col-2"><ul class="social-media-list"></ul>
